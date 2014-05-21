@@ -5,7 +5,50 @@
 
 from scrapy.item import Item, Field
 
+
 class GhostSpiderItem(Item):
-    # define the fields for your item here like:
-    # name = Field()
-    pass
+  
+  """required fields."""
+  # name of place
+  name = Field()
+  name_ja = Field()
+  name_es = Field()
+  name_za = Field()
+
+  # address of place
+  address_area_name = Field()
+  address_street = Field()
+  address_locality = Field()
+  address_locality = Field()
+  address_region = Field()
+  address_zip = Field()
+
+  address_area_name_ja = Field()
+  address_street_ja = Field()
+  address_locality_ja = Field()
+  address_locality_ja = Field()
+  address_region_ja = Field()
+  address_zip_ja = Field()
+
+  address_area_name_es = Field()
+  address_street_es = Field()
+  address_locality_es = Field()
+  address_locality_es = Field()
+  address_region_es = Field()
+  address_zip_es = Field()
+
+  address_za = Field()
+  address_area_name_za = Field()
+  address_street_za = Field()
+  address_locality_za = Field()
+  address_locality_za = Field()
+  address_region_za = Field()
+  address_zip_za = Field()
+
+  # phone number
+  phone = Field()
+  url = Field()
+  amenity = Field()
+
+  # popularity
+  rating = Field()
