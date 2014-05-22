@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from scrapy.spider import Spider
 from scrapy.selector import Selector
 from scrapy.http import Request
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
-from ghost_spider.helper import debug_screen, clean_lf, rev_telephone
+from ghost_spider.helper import debug_screen
 
 
 class DemoSpider(Spider):
@@ -11,6 +13,7 @@ class DemoSpider(Spider):
   allowed_domains = ["localhost"]
   start_urls = [
       "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_page.html",
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_b_page.html",
   ]
 
   def parse(self, response):
@@ -18,6 +21,8 @@ class DemoSpider(Spider):
     item = GhostSpiderItem()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
     item['phone'] = sel.xpath(helper.SEL_PHONE_NUMBER).extract()
+    if item['phone'] and len(item['phone']):
+      item['phone'] = helper.SEL_RE_PHONE_NUMBER.findall(item['phone'][0])
     item['address_area_name'] = sel.xpath(helper.SEL_AREA_NAME).extract()
     item['address_street'] = sel.xpath(helper.SEL_AREA_STREET).extract()
     item['address_locality'] = sel.xpath(helper.SEL_AREA_LOCALITY).extract()
@@ -57,13 +62,4 @@ class DemoSpider(Spider):
       request.meta['links'] = response.meta['links']
       request.meta['item'] = item
       return request
-
-    # clean the values
-    for k, v in item.iteritems():
-      if k == 'phone':
-        item[k] = rev_telephone(v[0] if len(v) else u'')
-      elif k == 'amenity':
-        item[k] = clean_lf(v, u', ')
-      else:
-        item[k] = clean_lf(v)
     return item

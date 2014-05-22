@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import urllib, os
+import urllib
+import re
 
 # selectors for pages by language
 SEL_JAPANESE_PAGE = '/html/head/link[@hreflang="ja"]/@href'
@@ -21,8 +22,8 @@ SEL_AREA_ZIP = '//div[@id="HEADING_GROUP"]/div/address/span[@rel="v:address"]/sp
 SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div[contains(@class,"amenity")]/text()'
 
 # Selector for phone number
-SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]/div[contains(@class, "blDetails")]/div[3]/div[@class="fl"]/script/text()'
-
+SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
+SEL_RE_PHONE_NUMBER = re.compile(u'escramble.+?document', re.DOTALL)
 # Selector for URL
 
 
