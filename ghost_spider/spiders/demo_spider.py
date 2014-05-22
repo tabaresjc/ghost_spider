@@ -12,8 +12,7 @@ class DemoSpider(Spider):
   name = "demo"
   allowed_domains = ["localhost"]
   start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_page.html",
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_b_page.html",
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_page.html"
   ]
 
   def parse(self, response):
@@ -21,8 +20,6 @@ class DemoSpider(Spider):
     item = GhostSpiderItem()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
     item['phone'] = sel.xpath(helper.SEL_PHONE_NUMBER).extract()
-    if item['phone'] and len(item['phone']):
-      item['phone'] = helper.SEL_RE_PHONE_NUMBER.findall(item['phone'][0])
     item['address_area_name'] = sel.xpath(helper.SEL_AREA_NAME).extract()
     item['address_street'] = sel.xpath(helper.SEL_AREA_STREET).extract()
     item['address_locality'] = sel.xpath(helper.SEL_AREA_LOCALITY).extract()
@@ -56,6 +53,7 @@ class DemoSpider(Spider):
     item['address_locality_%s' % current] = sel.xpath(helper.SEL_AREA_LOCALITY).extract()
     item['address_region_%s' % current] = sel.xpath(helper.SEL_AREA_REGION).extract()
     item['address_zip_%s' % current] = sel.xpath(helper.SEL_AREA_ZIP).extract()
+    item['amenity_%s' % current] = sel.xpath(helper.SEL_AMENITIES).extract()
     if remain and len(remain) > 0:
       request = Request(response.meta['links'][remain[0]], callback=self.parse_local_page)
       request.meta['remain'] = remain

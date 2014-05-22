@@ -49,6 +49,14 @@ class GhostSpiderItem(Item):
   phone = Field()
   url = Field()
   amenity = Field()
+  amenity_ja = Field()
+  amenity_es = Field()
+  amenity_za = Field()
 
   # popularity
   rating = Field()
+
+  page_body = Field()
+  page_body_ja = Field()
+  page_body_es = Field()
+  page_body_za = Field()

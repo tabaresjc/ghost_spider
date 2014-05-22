@@ -8,7 +8,7 @@ SEL_SPANISH_PAGE = '/html/head/link[@hreflang="es"]/@href'
 SEL_CHINESE_PAGE = '/html/head/link[@hreflang="zh-Hans"]/@href'
 
 # Selector for name of Place
-SEL_HOTEL_NAME = '//h1[@id="HEADING" and @rel="v:name"]/text()'
+SEL_HOTEL_NAME = '//h1[@id="HEADING" and (@rel="v:name" or @property="v:name")]/text()'
 
 # Selector for address
 SEL_AREA_NAME = '//div[@id="HEADING_GROUP"]/div/address/text()'
@@ -25,7 +25,8 @@ SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div[contains(@class,"a
 SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
 SEL_RE_PHONE_NUMBER = re.compile(u'escramble.+?document', re.DOTALL)
 # Selector for URL
-
+SEL_URL = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
+SEL_RE_URL = re.compile(u'&url.+?source', re.DOTALL)
 
 def clean_lf(value, sep=u''):
   if isinstance(value, dict):
