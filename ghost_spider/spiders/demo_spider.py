@@ -18,6 +18,8 @@ class DemoSpider(Spider):
   def parse(self, response):
     sel = Selector(response)
     item = GhostSpiderItem()
+    item['page_url'] = response.url
+    item['page_breadcrumbs'] = sel.xpath(helper.SEL_BREADCRUMBS).extract()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
     item['phone'] = sel.xpath(helper.SEL_PHONE_NUMBER).extract()
     item['address_area_name'] = sel.xpath(helper.SEL_AREA_NAME).extract()
@@ -26,18 +28,19 @@ class DemoSpider(Spider):
     item['address_region'] = sel.xpath(helper.SEL_AREA_REGION).extract()
     item['address_zip'] = sel.xpath(helper.SEL_AREA_ZIP).extract()
     item['amenity'] = sel.xpath(helper.SEL_AMENITIES).extract()
-    
+    item['rating'] = sel.xpath(helper.SEL_RATING).re(r'(.*)\s*of 5')
+    item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
+    item['page_body'] = response.body
     links = {
       'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
-      'za': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
+      'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
     }
-    # load the same page in different language
+
     for name, link in links.iteritems():
       links[name] = link[0]
-
     request = Request(links['ja'], callback=self.parse_local_page)
-    request.meta['remain'] = ['ja', 'es', 'za']
+    request.meta['remain'] = ['ja', 'es', 'zh']
     request.meta['links'] = links
     request.meta['item'] = item
     return request
@@ -54,6 +57,7 @@ class DemoSpider(Spider):
     item['address_region_%s' % current] = sel.xpath(helper.SEL_AREA_REGION).extract()
     item['address_zip_%s' % current] = sel.xpath(helper.SEL_AREA_ZIP).extract()
     item['amenity_%s' % current] = sel.xpath(helper.SEL_AMENITIES).extract()
+    item['page_body_%s' % current] = response.body
     if remain and len(remain) > 0:
       request = Request(response.meta['links'][remain[0]], callback=self.parse_local_page)
       request.meta['remain'] = remain

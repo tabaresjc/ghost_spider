@@ -315,3 +315,59 @@ class PlaceHs(Elastic):
       area["id"] = result["hits"]["hits"][0]["_id"]
 
     return area
+
+  @classmethod
+  def get_place_by_name(cls, name, fields=[]):
+    """Get place by its name."""
+    query = {
+      "query": {
+        "match_all": {}
+      },
+      "post_filter": {
+        "bool": {
+          "should": [
+            {
+              "term": {
+                "name_low": name.lower()
+              }
+            }
+          ]
+        }
+      }
+    }
+    if fields:
+      query["fields"] = fields
+    return cls.search(query)
+
+  @classmethod
+  def get_place_by_url(cls, url, fields=[]):
+    """Get place by its name."""
+    query = {
+      "query": {
+        "match_all": {}
+      },
+      "post_filter": {
+        "bool": {
+          "should": [
+            {
+              "term": {
+                "page_url": url.lower()
+              }
+            }
+          ]
+        }
+      }
+    }
+    if fields:
+      query["fields"] = fields
+    return cls.search(query)
+
+  @classmethod
+  def check_by_name(cls, name):
+    result = cls.get_place_by_name(name, fields=['name'])
+    return result["hits"]["total"] > 0
+
+  @classmethod
+  def check_by_url(cls, url):
+    result = cls.get_place_by_url(url, fields=['page_url'])
+    return result["hits"]["total"] > 0

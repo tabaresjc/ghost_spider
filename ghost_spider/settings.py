@@ -23,11 +23,11 @@ ITEM_PIPELINES = {
     'ghost_spider.pipelines.GhostSpiderPipeline': 0
 }
 
-ELASTICSEARCH_SERVER = ('127.0.0.1:9200', )
+ELASTICSEARCH_SERVER = ('192.168.56.101:9200', )
+
 
 def setup_elastic_connection():
   import slimes
-  from werkzeug import LocalProxy
   es_requester = slimes.Requester(ELASTICSEARCH_SERVER)
-  return LocalProxy(es_requester)
+  return es_requester
 es = setup_elastic_connection()

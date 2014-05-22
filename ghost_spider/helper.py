@@ -26,7 +26,14 @@ SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
 SEL_RE_PHONE_NUMBER = re.compile(u'escramble.+?document', re.DOTALL)
 # Selector for URL
 SEL_URL = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
-SEL_RE_URL = re.compile(u'&url.+?source', re.DOTALL)
+SEL_RE_URL = re.escape(u'/ShowUrl?&excludeFromVS') + '.*?(?=")'
+
+# Selector for rating
+SEL_RATING = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]/address/span[contains(@class,"star")]/span[contains(@class,"rate")]/img/@alt'
+SEL_PERCENT = '//div[@class="recommendedPercent"]/span[@class="percent"]/text()'
+
+# Selector for breadcrumbs
+SEL_BREADCRUMBS = '//ul[@class="breadcrumbs"]/li/a/span/text()'
 
 def clean_lf(value, sep=u''):
   if isinstance(value, dict):
@@ -61,13 +68,12 @@ def rev_telephone(scrambled):
   return phone_number
 
 
-def get_website(url):
-  """read any url and return response."""
+def get_weburl(url):
   try:
     fp = urllib.urlopen(url)
-    return fp
   except:
-    return None
+    return u''
+  return fp.geturl()
 
 
 def debug_screen(value):

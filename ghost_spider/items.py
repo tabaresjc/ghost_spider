@@ -10,10 +10,12 @@ class GhostSpiderItem(Item):
   
   """required fields."""
   # name of place
+  page_url = Field()
+  page_breadcrumbs = Field()
   name = Field()
   name_ja = Field()
   name_es = Field()
-  name_za = Field()
+  name_zh = Field()
 
   # address of place
   address_area_name = Field()
@@ -37,13 +39,13 @@ class GhostSpiderItem(Item):
   address_region_es = Field()
   address_zip_es = Field()
 
-  address_za = Field()
-  address_area_name_za = Field()
-  address_street_za = Field()
-  address_locality_za = Field()
-  address_locality_za = Field()
-  address_region_za = Field()
-  address_zip_za = Field()
+  address_zh = Field()
+  address_area_name_zh = Field()
+  address_street_zh = Field()
+  address_locality_zh = Field()
+  address_locality_zh = Field()
+  address_region_zh = Field()
+  address_zip_zh = Field()
 
   # phone number
   phone = Field()
@@ -51,12 +53,13 @@ class GhostSpiderItem(Item):
   amenity = Field()
   amenity_ja = Field()
   amenity_es = Field()
-  amenity_za = Field()
+  amenity_zh = Field()
 
   # popularity
   rating = Field()
-
+  popularity = Field()
+  
   page_body = Field()
   page_body_ja = Field()
   page_body_es = Field()
-  page_body_za = Field()
+  page_body_zh = Field()

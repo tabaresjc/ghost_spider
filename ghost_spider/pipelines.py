@@ -4,7 +4,9 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 from ghost_spider import helper
 from ghost_spider.helper import clean_lf, rev_telephone
+from helper import debug_screen
 from elastic import PlaceHs
+
 
 class GhostSpiderPipeline(object):
 
@@ -19,7 +21,18 @@ class GhostSpiderPipeline(object):
         item[k] = rev_telephone(v[0] if len(v) else u'')
       elif k == 'amenity':
         item[k] = clean_lf(v, u', ')
+      elif k == 'page_breadcrumbs':
+        vlen = len(v)
+        item[k] = v[:3] if vlen > 3 else v
       else:
         item[k] = clean_lf(v)
       item_es[k] = item[k]
+    
+    result = PlaceHs.get_place_by_name(item['name'], fields=['name'])
+    if not result['hits']['total']:
+      item_es['name_low'] = item['name'].lower()
+      item_es['rating'] = float(item['rating'] or 0)
+      item_es['popularity'] = float(item['popularity'] or 0)
+      item_es['page_url'] = item_es['page_url'].lower()
+      PlaceHs.save(item_es)
     return item
