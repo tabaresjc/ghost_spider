@@ -28,8 +28,7 @@ class GhostSpiderPipeline(object):
         item[k] = clean_lf(v)
       item_es[k] = item[k]
     
-    result = PlaceHs.get_place_by_name(item['name'], fields=['name'])
-    if not result['hits']['total']:
+    if not PlaceHs.check_by_name(item['name']):
       item_es['name_low'] = item['name'].lower()
       item_es['rating'] = float(item['rating'] or 0)
       item_es['popularity'] = float(item['popularity'] or 0)

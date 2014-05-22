@@ -2,6 +2,15 @@
 import urllib
 import re
 
+# selector for country, prefectures and areas
+SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'
+place_sel_name = re.compile(r'Lodging in\s*(.*)<', re.DOTALL)
+place_sel_link = re.compile(r'href="(.*)"', re.DOTALL)
+
+SEL_LIST_PLACES_LAST = '//div[@id="BODYCON"]/table[1]/tr/td/div/a'
+place_sel_name_last = re.compile(r'>(.*)<', re.DOTALL)
+place_sel_link_last = re.compile(r'href="(.*)"', re.DOTALL)
+
 # selectors for pages by language
 SEL_JAPANESE_PAGE = '/html/head/link[@hreflang="ja"]/@href'
 SEL_SPANISH_PAGE = '/html/head/link[@hreflang="es"]/@href'

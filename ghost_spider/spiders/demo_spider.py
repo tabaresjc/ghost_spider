@@ -11,11 +11,49 @@ from ghost_spider.helper import debug_screen
 class DemoSpider(Spider):
   name = "demo"
   allowed_domains = ["localhost"]
+  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_hotel_page.html"
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   ]
 
   def parse(self, response):
+    # print current area
+    count = 0
+    if response.meta.get('area_name'):
+      print "%s> %s" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'])
+
+    sel = Selector(response)
+    links = sel.xpath(helper.SEL_LIST_PLACES).extract()
+    if links:
+      for link in links:
+        count += 1
+        area_name = helper.place_sel_name.findall(link)[0]
+        area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
+        request = Request(area_link, callback=self.parse, errback=self.parse_err)
+        request.meta['area_name'] = area_name
+        request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
+        yield request
+    else:
+      # possible last level
+      links = sel.xpath(helper.SEL_LIST_PLACES_LAST).extract()
+      if links:
+        for link in links:
+          count += 1
+          area_name = helper.place_sel_name_last.findall(link)[0]
+          area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
+          request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
+          request.meta['area_name'] = area_name
+          request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
+          yield request
+    if response.meta.get('area_name'):
+      print "<%s %s total(%s)" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'], count)
+
+  def parse_err(self, response):
+    pass
+
+  def parse_place(self, response):
+    if response.meta.get('area_name'):
+      print "%s> %s" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'])
     sel = Selector(response)
     item = GhostSpiderItem()
     item['page_url'] = response.url
