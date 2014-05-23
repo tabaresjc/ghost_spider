@@ -3,9 +3,9 @@
 from scrapy.spider import Spider
 from scrapy.selector import Selector
 from scrapy.http import Request
-from scrapy import log
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
+import logging
 
 
 class TarantulaSpider(Spider):
@@ -15,14 +15,19 @@ class TarantulaSpider(Spider):
   start_urls = [
       "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   ]
+  log = None
 
-  def __init__(self, name=name, **kwargs):
+  def __init__(self, name=None, **kwargs):
     from ghost_spider.settings import LOG_OUTPUT_FILE
-    log.start(LOG_OUTPUT_FILE)
-    super(TarantulaSpider, self).__init__(name, **kwargs)
+    self.log = logging.getLogger(self.name)
+    ch = logging.FileHandler(LOG_OUTPUT_FILE)
+    formatter = logging.Formatter('%(asctime)s - %(message)s')
+    ch.setLevel(logging.ERROR)
+    ch.setFormatter(formatter)
+    self.log.addHandler(ch)
+    super(TarantulaSpider, self).__init__(self.name, **kwargs)
 
   def parse(self, response):
-    # print current area
     count = 0
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
@@ -54,7 +59,9 @@ class TarantulaSpider(Spider):
       print "%s> %s total(%s)" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'], count)
 
   def parse_err(self, failure):
-    log.msg(failure.getErrorMessage(), level=log.ERROR)
+    # save in the log the pages that couldn't be scrapped
+    if self.log:
+      self.log.error(failure.getErrorMessage())
 
   def parse_place(self, response):
     if response.meta.get('area_name'):
