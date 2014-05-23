@@ -54,3 +54,5 @@ def setup_elastic_connection():
 es = setup_elastic_connection()
 
 CSV_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/data.csv"
+LOG_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/error-log.txt"
+LOG_OUTPUT_FILE_INFO = "/Users/jctt/Developer/crawler/output/info-log.txt"
