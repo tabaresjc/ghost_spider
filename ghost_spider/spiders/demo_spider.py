@@ -6,6 +6,7 @@ from scrapy.http import Request
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
 from ghost_spider.helper import debug_screen
+from ghost_spider.elastic import PlaceHs
 
 
 class DemoSpider(Spider):
@@ -19,9 +20,6 @@ class DemoSpider(Spider):
   def parse(self, response):
     # print current area
     count = 0
-    if response.meta.get('area_name'):
-      print "%s> %s" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'])
-
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
     if links:
@@ -38,15 +36,18 @@ class DemoSpider(Spider):
       links = sel.xpath(helper.SEL_LIST_PLACES_LAST).extract()
       if links:
         for link in links:
-          count += 1
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
+          # don't scrap the page if it was crawled
+          if PlaceHs.check_by_url(area_link):
+            continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
           request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
           yield request
+          count += 1
     if response.meta.get('area_name'):
-      print "<%s %s total(%s)" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'], count)
+      print "%s> %s total(%s)" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'], count)
 
   def parse_err(self, response):
     pass

@@ -364,10 +364,12 @@ class PlaceHs(Elastic):
 
   @classmethod
   def check_by_name(cls, name):
+    """Check if place already exists."""
     result = cls.get_place_by_name(name, fields=['name'])
     return result["hits"]["total"] > 0
 
   @classmethod
   def check_by_url(cls, url):
+    """Check if place already exists."""
     result = cls.get_place_by_url(url, fields=['page_url'])
     return result["hits"]["total"] > 0

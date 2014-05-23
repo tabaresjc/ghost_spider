@@ -52,3 +52,5 @@ def setup_elastic_connection():
   es_requester = slimes.Requester(ELASTICSEARCH_SERVER)
   return es_requester
 es = setup_elastic_connection()
+
+CSV_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/data.csv"
