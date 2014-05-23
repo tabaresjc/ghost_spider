@@ -39,8 +39,8 @@ class DemoSpider(Spider):
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
-          if PlaceHs.check_by_url(area_link):
-            continue
+          #if PlaceHs.check_by_url(area_link):
+          #  continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
           request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1

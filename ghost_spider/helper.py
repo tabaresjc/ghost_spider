@@ -29,7 +29,7 @@ SEL_AREA_ZIP = '//div[@id="HEADING_GROUP"]/div/address/span/span/span/span[@prop
 
 
 # Selector for amenities
-SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div/text()'
+SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div[contains(@class,"amenity")]/text()'
 
 # Selector for phone number
 SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
@@ -92,7 +92,7 @@ def rev_telephone(scrambled):
   try:
     phone_number = telephone['a'] + telephone['c'] + telephone['b']
   except:
-    phone_number = u'_'
+    phone_number = u''
   return phone_number
 
 

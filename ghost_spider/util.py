@@ -13,7 +13,17 @@ class CsvWriter:
     u'name',
     u'name_ja',
     u'name_es',
-    u'name_zh'
+    u'name_zh',
+    u'address',
+    u'address_ja',
+    u'address_es',
+    u'address_zh',
+    u'phone',
+    u'amenity',
+    u'amenity_ja',
+    u'amenity_es',
+    u'amenity_zh',
+    u'popularity'
   ]
 
   def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
