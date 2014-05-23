@@ -24,6 +24,8 @@ class GhostSpiderPipeline(object):
       elif k == 'page_breadcrumbs':
         vlen = len(v)
         item[k] = v[:3] if vlen > 3 else v
+      elif k.startswith('page_body'):
+        pass
       else:
         item[k] = clean_lf(v)
       item_es[k] = item[k]

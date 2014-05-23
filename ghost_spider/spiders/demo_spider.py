@@ -68,7 +68,7 @@ class DemoSpider(Spider):
     item['amenity'] = sel.xpath(helper.SEL_AMENITIES).extract()
     item['rating'] = sel.xpath(helper.SEL_RATING).re(r'(.*)\s*of 5')
     item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
-    item['page_body'] = response.body
+    item['page_body'] = helper.get_body(sel)
     links = {
       'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
@@ -95,9 +95,11 @@ class DemoSpider(Spider):
     item['address_region_%s' % current] = sel.xpath(helper.SEL_AREA_REGION).extract()
     item['address_zip_%s' % current] = sel.xpath(helper.SEL_AREA_ZIP).extract()
     item['amenity_%s' % current] = sel.xpath(helper.SEL_AMENITIES).extract()
-    item['page_body_%s' % current] = response.body
+    item['page_body_%s' % current] = helper.get_body(sel)
     if remain and len(remain) > 0:
-      request = Request(response.meta['links'][remain[0]], callback=self.parse_local_page)
+      from ghost_spider.settings import REQUEST_HEADERS
+      next_lang = remain[0]
+      request = Request(response.meta['links'][next_lang], headers=REQUEST_HEADERS[next_lang], callback=self.parse_local_page, errback=self.parse_err)
       request.meta['remain'] = remain
       request.meta['links'] = response.meta['links']
       request.meta['item'] = item

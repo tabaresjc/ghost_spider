@@ -24,9 +24,26 @@ ITEM_PIPELINES = {
 }
 
 ELASTICSEARCH_SERVER = ('192.168.56.101:9200', )
+
 DEFAULT_REQUEST_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en',
+}
+
+REQUEST_HEADERS = {
+    'en': DEFAULT_REQUEST_HEADERS,
+    'ja': {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'ja'
+    },
+    'es': {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'es'
+    },
+    'zh': {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'zh-CN;q=0.8,zh;q=0.6'
+    }
 }
 
 

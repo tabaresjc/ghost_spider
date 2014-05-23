@@ -10,6 +10,7 @@ place_sel_link = re.compile(r'href="(.*)"', re.DOTALL)
 SEL_LIST_PLACES_LAST = '//div[@id="BODYCON"]/table[1]/tr/td/div/a'
 place_sel_name_last = re.compile(r'>(.*)<', re.DOTALL)
 place_sel_link_last = re.compile(r'href="(.*)"', re.DOTALL)
+place_sel_place_type = re.compile(r'<span class="placeTypeText">(.*)</span>', re.DOTALL)
 
 # selectors for pages by language
 SEL_JAPANESE_PAGE = '/html/head/link[@hreflang="ja"]/@href'
@@ -21,14 +22,14 @@ SEL_HOTEL_NAME = '//h1[@id="HEADING" and (@rel="v:name" or @property="v:name")]/
 
 # Selector for address
 SEL_AREA_NAME = '//div[@id="HEADING_GROUP"]/div/address/text()'
-SEL_AREA_STREET = '//div[@id="HEADING_GROUP"]/div/address/span[@rel="v:address"]/span[@class="format_address"]/span[@property="v:street-address"]/text()'
-SEL_AREA_LOCALITY = '//div[@id="HEADING_GROUP"]/div/address/span[@rel="v:address"]/span[@class="format_address"]/span/span[@property="v:locality"]/text()'
-SEL_AREA_REGION = '//div[@id="HEADING_GROUP"]/div/address/span[@rel="v:address"]/span[@class="format_address"]/span/span[@property="v:region"]/text()'
-SEL_AREA_ZIP = '//div[@id="HEADING_GROUP"]/div/address/span[@rel="v:address"]/span[@class="format_address"]/span/span[@property="v:postal-code"]/text()'
+SEL_AREA_STREET = '//div[@id="HEADING_GROUP"]/div/address/span/span/span[@property="v:street-address"]/text()'
+SEL_AREA_LOCALITY = '//div[@id="HEADING_GROUP"]/div/address/span/span/span/span[@property="v:locality"]/text()'
+SEL_AREA_REGION = '//div[@id="HEADING_GROUP"]/div/address/span/span/span/span[@property="v:region"]/text()'
+SEL_AREA_ZIP = '//div[@id="HEADING_GROUP"]/div/address/span/span/span/span[@property="v:postal-code"]/text()'
 
 
 # Selector for amenities
-SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div[contains(@class,"amenity")]/text()'
+SEL_AMENITIES = '//div[contains(@class, "amenitiesRDV1")]/div/text()'
 
 # Selector for phone number
 SEL_PHONE_NUMBER = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
@@ -38,11 +39,29 @@ SEL_URL = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]'
 SEL_RE_URL = re.escape(u'/ShowUrl?&excludeFromVS') + '.*?(?=")'
 
 # Selector for rating
-SEL_RATING = '//div[@id="HEADING_GROUP"]/div[contains(@class, "wrap")]/address/span[contains(@class,"star")]/span[contains(@class,"rate")]/img/@alt'
+SEL_RATING = '//div[@id="HEADING_GROUP"]/div/address/span/span[contains(@class,"rate")]/img/@alt'
 SEL_PERCENT = '//div[@class="recommendedPercent"]/span[@class="percent"]/text()'
 
 # Selector for breadcrumbs
 SEL_BREADCRUMBS = '//ul[@class="breadcrumbs"]/li/a/span/text()'
+
+# Selector for body (just select few parts of the page !! dont' be so greedy!)
+SEL_HEADING = '//div[@id="HEADING_GROUP"]'
+SEL_META = '//head/meta'
+SEL_AMENITY_DIV = '//div[@id="AMENITIES_OVERLAY_HIDDEN"]'
+SEL_LOCATION_CONTENT = '//div[@id="HR_HACKATHON_CONTENT"]/div/div[contains(@class,"locationContent")]'
+
+
+def get_body(sel):
+  """extract the most relevant info from the page."""
+  body = []
+  body.append(sel.xpath(SEL_HEADING).extract())
+  body.append(sel.xpath(SEL_META).extract())
+  body.append(sel.xpath(SEL_AMENITY_DIV).extract())
+  body.append(sel.xpath(SEL_LOCATION_CONTENT).extract())
+  body = [b[0] for b in body if b and len(b)]
+  return body
+
 
 def clean_lf(value, sep=u''):
   if isinstance(value, dict):
