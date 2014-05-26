@@ -16,6 +16,11 @@ class TarantulaSpider(Spider):
   start_urls = [
       "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   ]
+  # allowed_domains = ["tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  # target_base_url = "http://www.tripadvisor.com"
+  # start_urls = [
+  #     "http://www.tripadvisor.com/AllLocations-g191-c1-Hotels-United_States.html"
+  # ]
   log = None
 
   def __init__(self, name=None, **kwargs):

@@ -41,8 +41,8 @@ class GhostSpiderPipeline(object):
     item_es['page_breadcrumbs'] = item['page_breadcrumbs']
     item_es['phone'] = item['phone']
     item_es['area1'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
-    item_es['area2'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
-    item_es['area3'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
+    item_es['area2'] = item['page_breadcrumbs'][1] if len(item['page_breadcrumbs']) > 1 else u''
+    item_es['area3'] = item['page_breadcrumbs'][2] if len(item['page_breadcrumbs']) > 2 else u''
     place = []
     for lang in ['en', 'ja', 'es', 'fr', 'zh']:
       p = {

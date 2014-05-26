@@ -14,7 +14,7 @@ SPIDER_MODULES = ['ghost_spider.spiders']
 NEWSPIDER_MODULE = 'ghost_spider.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.16 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36'
 #DOWNLOAD_DELAY = 2
 COOKIES_ENABLED = False
 
