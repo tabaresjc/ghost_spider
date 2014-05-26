@@ -14,8 +14,8 @@ SPIDER_MODULES = ['ghost_spider.spiders']
 NEWSPIDER_MODULE = 'ghost_spider.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.62 Safari/537.36'
-#DOWNLOAD_DELAY = 2
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36'
+DOWNLOAD_DELAY = 1
 COOKIES_ENABLED = False
 
 
@@ -60,3 +60,10 @@ es = setup_elastic_connection()
 CSV_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/data.csv"
 LOG_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/error-log.txt"
 LOG_OUTPUT_FILE_INFO = "/Users/jctt/Developer/crawler/output/info-log.txt"
+
+LOG_ENABLED = True
+LOG_FILE = LOG_OUTPUT_FILE_INFO
+LOG_LEVEL = 'INFO'
+LOG_STDOUT = False
+
+HTTPERROR_ALLOW_ALL = True

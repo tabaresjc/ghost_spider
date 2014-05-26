@@ -6,6 +6,7 @@ from scrapy.http import Request
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
 import logging
+from scrapy import log as scrapyLog
 from ghost_spider.elastic import PlaceHs
 
 
@@ -22,6 +23,7 @@ class TarantulaSpider(Spider):
       "http://www.tripadvisor.com/AllLocations-g191-c1-Hotels-United_States.html"
   ]
   log = None
+  total_count = 0L
 
   def __init__(self, name=None, **kwargs):
     from ghost_spider.settings import LOG_OUTPUT_FILE
@@ -31,6 +33,7 @@ class TarantulaSpider(Spider):
     ch.setLevel(logging.ERROR)
     ch.setFormatter(formatter)
     self.log.addHandler(ch)
+    self.total_count = 0L
     super(TarantulaSpider, self).__init__(self.name, **kwargs)
 
   def parse(self, response):
@@ -55,24 +58,30 @@ class TarantulaSpider(Spider):
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
           if PlaceHs.check_by_url(area_link):
-            print "ignored %s" % area_link
+            scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
             continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
           request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
           yield request
           count += 1
+        self.total_count += count
+        print u'found = %s' % self.total_count
     if response.meta.get('area_name'):
-      print "%s> %s total(%s)" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'], count)
+      message = u'%s> %s found(%s) | total(%s)' % ('-----' * response.meta.get('area_level') or 1, response.meta['area_name'], count, self.total_count)
+      print message
+      scrapyLog.msg(message, level=scrapyLog.INFO)
 
   def parse_err(self, failure):
     # save in the log the pages that couldn't be scrapped
     if self.log:
       self.log.error(failure.getErrorMessage())
+      self.log.error(failure.getBriefTraceback())
+      
 
   def parse_place(self, response):
-    if response.meta.get('area_name'):
-      print "%s> %s" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'])
+    if response.meta.get('area_name') and self.log:
+      scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
     sel = Selector(response)
     item = GhostSpiderItem()
     item['page_url'] = response.url
@@ -96,6 +105,9 @@ class TarantulaSpider(Spider):
     }
 
     for name, link in links.iteritems():
+      if not link:
+        self.log.error("couldn't index this page | %s" % response.url)
+        return None
       links[name] = link[0]
     request = Request(links['ja'], callback=self.parse_local_page)
     request.meta['remain'] = ['ja', 'es', 'fr', 'zh']
