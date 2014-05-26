@@ -11,16 +11,16 @@ from ghost_spider.elastic import PlaceHs
 
 class TarantulaSpider(Spider):
   name = "tarantula"
-  allowed_domains = ["localhost"]
-  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
-  start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
-  ]
-  # allowed_domains = ["tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
-  # target_base_url = "http://www.tripadvisor.com"
+  # allowed_domains = ["localhost"]
+  # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   # start_urls = [
-  #     "http://www.tripadvisor.com/AllLocations-g191-c1-Hotels-United_States.html"
+  #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   # ]
+  allowed_domains = ["tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  target_base_url = "http://www.tripadvisor.com"
+  start_urls = [
+      "http://www.tripadvisor.com/AllLocations-g191-c1-Hotels-United_States.html"
+  ]
   log = None
 
   def __init__(self, name=None, **kwargs):

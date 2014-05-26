@@ -20,8 +20,10 @@ class GhostSpiderPipeline(object):
       elif k.startswith('amenity'):
         item[k] = helper.clean_lf(v, u', ')
       elif k == 'page_breadcrumbs':
-        vlen = len(v)
-        item[k] = v[:3] if vlen > 3 else v
+        if v and len(v):
+          item[k] = v[:len(v) - 1] if v else []
+        else:
+          item[k] = []
       elif k.startswith('page_body'):
         pass
       else:
@@ -43,6 +45,8 @@ class GhostSpiderPipeline(object):
     item_es['area1'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
     item_es['area2'] = item['page_breadcrumbs'][1] if len(item['page_breadcrumbs']) > 1 else u''
     item_es['area3'] = item['page_breadcrumbs'][2] if len(item['page_breadcrumbs']) > 2 else u''
+    item_es['area4'] = item['page_breadcrumbs'][3] if len(item['page_breadcrumbs']) > 3 else u''
+    item_es['area5'] = item['page_breadcrumbs'][4] if len(item['page_breadcrumbs']) > 4 else u''
     place = []
     for lang in ['en', 'ja', 'es', 'fr', 'zh']:
       p = {
