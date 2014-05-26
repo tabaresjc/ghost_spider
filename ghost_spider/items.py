@@ -16,6 +16,7 @@ class GhostSpiderItem(Item):
   name_ja = Field()
   name_es = Field()
   name_zh = Field()
+  name_fr = Field()
 
   # address of place
   address_area_name = Field()
@@ -43,12 +44,20 @@ class GhostSpiderItem(Item):
   address_region_zh = Field()
   address_zip_zh = Field()
 
+  address_fr = Field()
+  address_area_name_fr = Field()
+  address_street_fr = Field()
+  address_locality_fr = Field()
+  address_region_fr = Field()
+  address_zip_fr = Field()
+
   # phone number
   phone = Field()
   url = Field()
   amenity = Field()
   amenity_ja = Field()
   amenity_es = Field()
+  amenity_fr = Field()
   amenity_zh = Field()
 
   # popularity
@@ -58,4 +67,5 @@ class GhostSpiderItem(Item):
   page_body = Field()
   page_body_ja = Field()
   page_body_es = Field()
+  page_body_fr = Field()
   page_body_zh = Field()

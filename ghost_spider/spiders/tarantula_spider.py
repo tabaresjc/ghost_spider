@@ -6,6 +6,7 @@ from scrapy.http import Request
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
 import logging
+from ghost_spider.elastic import PlaceHs
 
 
 class TarantulaSpider(Spider):
@@ -48,8 +49,9 @@ class TarantulaSpider(Spider):
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
-          #if PlaceHs.check_by_url(area_link):
-          #  continue
+          if PlaceHs.check_by_url(area_link):
+            print "ignored %s" % area_link
+            continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
           request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
@@ -83,6 +85,7 @@ class TarantulaSpider(Spider):
     item['page_body'] = helper.get_body(sel)
     links = {
       'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
+      'fr': sel.xpath(helper.SEL_FRENCH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
       'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
     }
@@ -90,7 +93,7 @@ class TarantulaSpider(Spider):
     for name, link in links.iteritems():
       links[name] = link[0]
     request = Request(links['ja'], callback=self.parse_local_page)
-    request.meta['remain'] = ['ja', 'es', 'zh']
+    request.meta['remain'] = ['ja', 'es', 'fr', 'zh']
     request.meta['links'] = links
     request.meta['item'] = item
     return request

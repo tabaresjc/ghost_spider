@@ -23,7 +23,7 @@ ITEM_PIPELINES = {
     'ghost_spider.pipelines.GhostSpiderPipeline': 0
 }
 
-ELASTICSEARCH_SERVER = ('192.168.56.101:9200', )
+ELASTICSEARCH_SERVER = ('192.168.57.101:9200', )
 
 DEFAULT_REQUEST_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -39,6 +39,10 @@ REQUEST_HEADERS = {
     'es': {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'es'
+    },
+    'fr': {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'fr'
     },
     'zh': {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

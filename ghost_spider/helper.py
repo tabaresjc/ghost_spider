@@ -15,6 +15,7 @@ place_sel_place_type = re.compile(r'<span class="placeTypeText">(.*)</span>', re
 # selectors for pages by language
 SEL_JAPANESE_PAGE = '/html/head/link[@hreflang="ja"]/@href'
 SEL_SPANISH_PAGE = '/html/head/link[@hreflang="es"]/@href'
+SEL_FRENCH_PAGE = '/html/head/link[@hreflang="fr"]/@href'
 SEL_CHINESE_PAGE = '/html/head/link[@hreflang="zh-Hans"]/@href'
 
 # Selector for name of Place

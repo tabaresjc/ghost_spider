@@ -12,13 +12,12 @@ class GhostSpiderPipeline(object):
   """Process & format data after being scrapped from page."""
 
   def process_item(self, item, spider):
-    item_es = {}
     for k, v in item.iteritems():
       if k == 'phone':
         if v and len(v):
           v = helper.SEL_RE_PHONE_NUMBER.findall(v[0])
         item[k] = helper.rev_telephone(v[0] if len(v) else u'')
-      elif k == 'amenity':
+      elif k.startswith('amenity'):
         item[k] = helper.clean_lf(v, u', ')
       elif k == 'page_breadcrumbs':
         vlen = len(v)
@@ -27,16 +26,34 @@ class GhostSpiderPipeline(object):
         pass
       else:
         item[k] = helper.clean_lf(v)
-      item_es[k] = item[k]
+
+    if not PlaceHs.check_by_name(item['name']):
+      PlaceHs.save(self.save_item_to_es(item))
+    # self.save_to_csv(item_es)
+    return item
+
+  def save_item_to_es(self, item):
+    item_es = {}
     item_es['name_low'] = item['name'].lower()
     item_es['rating'] = float(item['rating'] or 0)
     item_es['popularity'] = float(item['popularity'] or 0)
-    item_es['page_url'] = item_es['page_url'].lower()
-    
-    if not PlaceHs.check_by_name(item['name']):
-      PlaceHs.save(item_es)
-    self.save_to_csv(item_es)
-    return item
+    item_es['page_url'] = item['page_url'].lower()
+    item_es['page_breadcrumbs'] = item['page_breadcrumbs']
+    item_es['phone'] = item['phone']
+    item_es['area1'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
+    item_es['area2'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
+    item_es['area3'] = item['page_breadcrumbs'][0] if len(item['page_breadcrumbs']) > 0 else u''
+    place = []
+    for lang in ['en', 'ja', 'es', 'fr', 'zh']:
+      p = {
+        'lang': lang
+      }
+      for s in ['name', 'address_area_name', 'address_locality', 'address_street', 'address_region', 'address_zip', 'amenity', 'page_body']:
+        s = '%s_%s' % (s, lang) if lang != 'en' else s
+        p.update({s: item[s]})
+      place.append(p)
+    item_es['place'] = place
+    return item_es
 
   def save_to_csv(self, item):
     from ghost_spider.settings import CSV_OUTPUT_FILE
