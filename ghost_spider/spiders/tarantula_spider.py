@@ -53,6 +53,19 @@ class TarantulaSpider(Spider):
       # possible last level
       links = sel.xpath(helper.SEL_LIST_PLACES_LAST).extract()
       if links:
+        if not response.meta.get('is_more'):
+          # load additional list of places
+          links_more = sel.xpath(helper.SEL_LIST_MORE).extract()
+          for l in links_more:
+            count += 1
+            area_name = "More Links"
+            area_link = self.target_base_url + helper.place_sel_link.findall(l)[0]
+            request = Request(area_link, callback=self.parse, errback=self.parse_err)
+            request.meta['area_name'] = area_name
+            request.meta['is_more'] = True
+            request.meta['area_level'] = long(response.meta.get('area_level') or 1)
+            scrapyLog.msg('Loading more pages, %s' % area_link, level=scrapyLog.INFO)
+            yield request
         for link in links:
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
@@ -101,7 +114,7 @@ class TarantulaSpider(Spider):
       'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
       'fr': sel.xpath(helper.SEL_FRENCH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
-      'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
+      # 'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
     }
 
     for name, link in links.iteritems():
@@ -110,7 +123,7 @@ class TarantulaSpider(Spider):
         return None
       links[name] = link[0]
     request = Request(links['ja'], callback=self.parse_local_page)
-    request.meta['remain'] = ['ja', 'es', 'fr', 'zh']
+    request.meta['remain'] = ['ja', 'es', 'fr']
     request.meta['links'] = links
     request.meta['item'] = item
     return request

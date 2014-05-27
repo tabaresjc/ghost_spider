@@ -4,7 +4,9 @@ import re
 
 # selector for country, prefectures and areas
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'
-place_sel_name = re.compile(r'Lodging in\s*(.*)<', re.DOTALL)
+
+SEL_LIST_MORE = '//div[@id="BODYCON"]/div[contains(text(),"More Accommodations")]/a'
+place_sel_name = re.compile(r'>(.*)<', re.DOTALL)
 place_sel_link = re.compile(r'href="(.*)"', re.DOTALL)
 
 SEL_LIST_PLACES_LAST = '//div[@id="BODYCON"]/table[1]/tr/td/div/a'

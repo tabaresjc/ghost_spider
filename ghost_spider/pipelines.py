@@ -31,6 +31,7 @@ class GhostSpiderPipeline(object):
 
     if not PlaceHs.check_by_name(item['name']):
       PlaceHs.save(self.save_item_to_es(item))
+      PlaceHs.refresh()
     # self.save_to_csv(item_es)
     return item
 
@@ -48,7 +49,7 @@ class GhostSpiderPipeline(object):
     item_es['area4'] = item['page_breadcrumbs'][3] if len(item['page_breadcrumbs']) > 3 else u''
     item_es['area5'] = item['page_breadcrumbs'][4] if len(item['page_breadcrumbs']) > 4 else u''
     place = []
-    for lang in ['en', 'ja', 'es', 'fr', 'zh']:
+    for lang in ['en', 'ja', 'es', 'fr']:
       p = {
         'lang': lang
       }
