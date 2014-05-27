@@ -9,38 +9,18 @@ class CsvWriter:
   which is encoded in the given encoding.
   """
 
-  csv_first_row = [
-    u'name',
-    u'name_ja',
-    u'name_es',
-    u'name_zh',
-    u'address',
-    u'address_ja',
-    u'address_es',
-    u'address_zh',
-    u'phone',
-    u'amenity',
-    u'amenity_ja',
-    u'amenity_es',
-    u'amenity_zh',
-    u'popularity'
-  ]
-
   def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-    # Redirect output to a queue
     self.queue = cStringIO.StringIO()
-    #fieldnames = [u'name', u'name_eng', u'areas0', u'address', u'categories0', u'categories1', u'categories2']
-    #self.writer = csv.DictWriter(self.queue, fieldnames, dialect=dialect, **kwds)
     self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
     self.stream = f
     self.encoder = codecs.getincrementalencoder(encoding)()
 
   @classmethod
-  def write_to_csv(cls, filename, rows):
+  def write_to_csv(cls, filename, rows, firs_row=[]):
     is_blank = not os.path.isfile(filename)
     csvw = cls(open(filename, 'a+'), dialect='excel')
-    if is_blank:
-      csvw.writerow(cls.csv_first_row)
+    if is_blank and firs_row:
+      csvw.writerow(firs_row)
     csvw.writerow(rows)
 
   def writerow(self, row):
