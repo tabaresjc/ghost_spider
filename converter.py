@@ -3,6 +3,12 @@ import sys
 from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 
+def export_hotels_to_csv():
+  from ghost_spider.util import LocationHotelsToCsvFiles
+  exporter = LocationHotelsToCsvFiles()
+  exporter.dump()
+
+
 def fix_data_mistake():
   """Fix data saved in a wrong way."""
   import re
@@ -18,11 +24,9 @@ def fix_data_mistake():
       break
     else:
       print u'Currently in page = %s' % page
-    print "*-" * 50
     page += 1
     bulk = u''
     for p in places:
-      print u'Update %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name'])
       p['region'] = p['place'][0]['address_region']
       state = clean_state.findall(p['area2'])
       if state and len(state):
@@ -244,7 +248,8 @@ def main():
     'type_elastic': type_elastic,
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
-    'fix_data_mistake': fix_data_mistake
+    'fix_data_mistake': fix_data_mistake,
+    'export_hotels_to_csv': export_hotels_to_csv
   }
   command = COMMANDS[args[0]]
 
