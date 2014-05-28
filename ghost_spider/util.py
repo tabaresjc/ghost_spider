@@ -44,10 +44,11 @@ class CsvWriter:
 
 
 class LocationHotelsToCsvFiles(object):
+  name = "ghost_spider"
   LOG_OUTPUT_FILE_INFO = "upload/info-log.txt"
   ES_SORT = [
     {
-      "area2.untouched": "asc"
+      "region": "asc"
     },
     {
       "popularity": "desc"
@@ -81,11 +82,13 @@ class LocationHotelsToCsvFiles(object):
     try:
       return self._logger
     except AttributeError:
+      if not os.path.exists('upload'):
+          os.makedirs('upload')
       self._logger = logging.getLogger(self.name)
       ch = logging.FileHandler(self.LOG_OUTPUT_FILE_INFO)
       formatter = logging.Formatter('%(asctime)s - %(message)s')
       ch.setFormatter(formatter)
-      ch.setLevel(logging.INFO)
+      ch.setLevel(logging.ERROR)
       self._logger.addHandler(ch)
       self.total_count = 0L
     return self._logger
@@ -94,14 +97,15 @@ class LocationHotelsToCsvFiles(object):
     from ghost_spider.elastic import LocationHs
     page = 1
     limit = 100
-    shutil.rmtree('upload/')
+    if os.path.exists('upload/'):
+      shutil.rmtree('upload/')
     while True:
       places, total = LocationHs.pager(page=page, size=limit, sort=self.ES_SORT)
       page += 1
       if not places or not len(places):
         break
       for p in places:
-        self.logger.info(u'Saving %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name']))
+        self.logger.error(u'Saving %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name']))
         self.save_to_csv(p)
 
   def save_to_csv(self, item):
@@ -141,7 +145,7 @@ class LocationHotelsToCsvFiles(object):
   def get_filename(self, item, filename):
     if not item.get('area1') or not item.get('area2'):
       return None
-    directory = self.TARGET_DIR_FORMAT % (item.get('area1'), item.get('area2'))
+    directory = self.TARGET_DIR_FORMAT % (item.get('area1').strip(), item.get('area2').strip())
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = u'%s/%s' % (directory, filename)

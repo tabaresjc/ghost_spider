@@ -3,6 +3,33 @@ import sys
 from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 
+def remove_hotels():
+  from ghost_spider.elastic import LocationHs
+  hotels = [
+    u'Days Inn',
+    u'Days Inn Miami Airport North',
+    u'Courtyard New York Manhattan/Central Park',
+    u'Hyatt Place New York Midtown South',
+    u'The Jade Hotel',
+    u'Hotel Pennsylvania New York',
+    u'Fairfield Inn & Suites by Marriott New York Manhattan / Times Square',
+    u'New York Marriott Marquis',
+    u'New York Hilton Midtown',
+    u'Element New York Times Square West',
+    u'Park Lane Hotel',
+    u'Soho Grand Hotel',
+    u'The West Tower at ONE UN Plaza',
+    u'SIXTY LES',
+    u'Crowne Plaza Times Square Manhattan',
+    u'The Wyndham Midtown 45'
+  ]
+  for name in hotels:
+    result = LocationHs.get_place_by_name(name, fields=['name'])
+    if result["hits"]["total"] > 0:
+      print "Deleting: %s total(%s)" % (name, result["hits"]["total"])
+      LocationHs.delete({'id': result["hits"]["hits"][0]["_id"]})
+
+
 def export_hotels_to_csv():
   from ghost_spider.util import LocationHotelsToCsvFiles
   exporter = LocationHotelsToCsvFiles()
@@ -180,18 +207,15 @@ def _check_repository(es, name):
   """Check if the repository exist if not create it."""
   try:
     es.request(method="get", mysuffix="_snapshot/%s" % name)
-  except Exception, e:
-    if "RepositoryMissingException" in e[0]:
-      repository = {"type": "fs",
-        "settings": {
-          "location": "/tmp/%s" % name,
-          "compress": True
-        }
+  except:
+    repository = {"type": "fs",
+      "settings": {
+        "location": "/tmp/%s" % name,
+        "compress": True
       }
-      es.request(method="put", mysuffix="_snapshot/%s" % (name), mydata=repository)
-    else:
-      print "other problem (the repository is here but...)"
-      raise
+    }
+    es.request(method="put", mysuffix="_snapshot/%s" % (name), mydata=repository)
+
 
 
 def create_repository(name):
@@ -249,7 +273,8 @@ def main():
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
     'fix_data_mistake': fix_data_mistake,
-    'export_hotels_to_csv': export_hotels_to_csv
+    'export_hotels_to_csv': export_hotels_to_csv,
+    'remove_hotels': remove_hotels
   }
   command = COMMANDS[args[0]]
 
