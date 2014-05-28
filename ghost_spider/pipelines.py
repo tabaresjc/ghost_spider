@@ -48,14 +48,15 @@ class GhostSpiderPipeline(object):
     item_es['area3'] = item['page_breadcrumbs'][2] if len(item['page_breadcrumbs']) > 2 else u''
     item_es['area4'] = item['page_breadcrumbs'][3] if len(item['page_breadcrumbs']) > 3 else u''
     item_es['area5'] = item['page_breadcrumbs'][4] if len(item['page_breadcrumbs']) > 4 else u''
+    item_es['region'] = item['address_region']
     place = []
     for lang in ['en', 'ja', 'es', 'fr']:
       p = {
         'lang': lang
       }
       for s in ['name', 'address_area_name', 'address_locality', 'address_street', 'address_region', 'address_zip', 'amenity', 'page_body']:
-        s = '%s_%s' % (s, lang) if lang != 'en' else s
-        p.update({s: item[s]})
+        nk = '%s_%s' % (s, lang) if lang != 'en' else s
+        p.update({s: item[nk]})
       place.append(p)
     item_es['place'] = place
     return item_es

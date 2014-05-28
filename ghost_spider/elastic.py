@@ -373,3 +373,23 @@ class PlaceHs(Elastic):
     """Check if place already exists."""
     result = cls.get_place_by_url(url, fields=['page_url'])
     return result["hits"]["total"] > 0
+
+  @classmethod
+  def bulk_place(self, data, action="update"):
+    """Build the bulk for a picture.
+
+    action: str [create, update]
+    data: already build data
+
+    return: formatted data for bulk in Json.
+
+    """
+    bulk_header = {
+      action: {"_index": self.index,
+      "_type": self.type, "_id": data["id"]}
+    }
+    if "id" in data:
+      del data["id"]
+    if action == "update":
+      data = {"doc": data}
+    return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'

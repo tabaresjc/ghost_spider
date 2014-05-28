@@ -59,7 +59,7 @@ class RedBackSpider(Spider):
     while True:
       places, total = PlaceHs.pager(page=page, size=limit, sort=self.ES_SORT)
       page += 1
-      if not places:
+      if not places or not len(places):
         break
       for p in places:
         print u'Saving %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name'])
