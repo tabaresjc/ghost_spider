@@ -282,120 +282,6 @@ class Elastic(object):
     return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
 
 
-class PlaceHs(Elastic):
-
-  """List of cities area for Hair Salon."""
-
-  index = "travel_crawler"
-  type = "places"
-
-  @classmethod
-  def save(cls, data):
-    """Save the area.
-
-      data: dict
-
-    """
-    super(PlaceHs, cls).save(data, True)
-
-  @classmethod
-  def get_by_id(cls, id):
-    """Get an area by his id.
-
-    id: string
-
-    return: ElasticSearch result
-
-    """
-    area = None
-    if not id:
-      return area
-    result = cls.search({"query": {"match_all": {}}, "post_filter": {"term": {"_id": id}}})
-    if result["hits"]["total"] == 1:
-      area = result["hits"]["hits"][0]["_source"]
-      area["id"] = result["hits"]["hits"][0]["_id"]
-
-    return area
-
-  @classmethod
-  def get_place_by_name(cls, name, fields=[]):
-    """Get place by its name."""
-    query = {
-      "query": {
-        "match_all": {}
-      },
-      "post_filter": {
-        "bool": {
-          "should": [
-            {
-              "term": {
-                "name_low": name.lower()
-              }
-            }
-          ]
-        }
-      }
-    }
-    if fields:
-      query["fields"] = fields
-    return cls.search(query)
-
-  @classmethod
-  def get_place_by_url(cls, url, fields=[]):
-    """Get place by its name."""
-    query = {
-      "query": {
-        "match_all": {}
-      },
-      "post_filter": {
-        "bool": {
-          "should": [
-            {
-              "term": {
-                "page_url": url.lower()
-              }
-            }
-          ]
-        }
-      }
-    }
-    if fields:
-      query["fields"] = fields
-    return cls.search(query)
-
-  @classmethod
-  def check_by_name(cls, name):
-    """Check if place already exists."""
-    result = cls.get_place_by_name(name, fields=['name'])
-    return result["hits"]["total"] > 0
-
-  @classmethod
-  def check_by_url(cls, url):
-    """Check if place already exists."""
-    result = cls.get_place_by_url(url, fields=['page_url'])
-    return result["hits"]["total"] > 0
-
-  @classmethod
-  def bulk_place(cls, data, action="update"):
-    """Build the bulk for a picture.
-
-    action: str [create, update]
-    data: already build data
-
-    return: formatted data for bulk in Json.
-
-    """
-    bulk_header = {
-      action: {"_index": cls.index,
-      "_type": cls.type, "_id": data["id"]}
-    }
-    if "id" in data:
-      del data["id"]
-    if action == "update":
-      data = {"doc": data}
-    return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
-
-
 class LocationHs(Elastic):
 
   """List of cities area for Hair Salon."""
@@ -410,7 +296,7 @@ class LocationHs(Elastic):
       data: dict
 
     """
-    super(PlaceHs, cls).save(data, True)
+    super(LocationHs, cls).save(data, True)
 
   @classmethod
   def get_by_id(cls, id):

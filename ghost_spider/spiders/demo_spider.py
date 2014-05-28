@@ -5,8 +5,6 @@ from scrapy.selector import Selector
 from scrapy.http import Request
 from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
-from ghost_spider.helper import debug_screen
-from ghost_spider.elastic import PlaceHs
 
 
 class DemoSpider(Spider):

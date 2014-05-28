@@ -6,7 +6,7 @@ import re
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'
 
 SEL_LIST_MORE = '//div[@id="BODYCON"]/div[contains(text(),"More Accommodations")]/a'
-place_sel_name = re.compile(r'>(.*)<', re.DOTALL)
+place_sel_name = re.compile(r'Lodging in\s*(.*)<', re.DOTALL)
 place_sel_link = re.compile(r'href="(.*)"', re.DOTALL)
 
 SEL_LIST_PLACES_LAST = '//div[@id="BODYCON"]/table[1]/tr/td/div/a'
@@ -53,6 +53,8 @@ SEL_HEADING = '//div[@id="HEADING_GROUP"]'
 SEL_META = '//head/meta'
 SEL_AMENITY_DIV = '//div[@id="AMENITIES_OVERLAY_HIDDEN"]'
 SEL_LOCATION_CONTENT = '//div[@id="HR_HACKATHON_CONTENT"]/div/div[contains(@class,"locationContent")]'
+
+CLEAN_STATE = re.compile(r'(.*)\s\(', re.DOTALL)
 
 
 def get_body(sel):

@@ -7,7 +7,7 @@ from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
 import logging
 from scrapy import log as scrapyLog
-from ghost_spider.elastic import PlaceHs
+from ghost_spider.elastic import LocationHs
 
 
 class TarantulaSpider(Spider):
@@ -17,10 +17,11 @@ class TarantulaSpider(Spider):
   # start_urls = [
   #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   # ]
-  allowed_domains = ["tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  allowed_domains = ["localhost"]
   target_base_url = "http://www.tripadvisor.com"
   start_urls = [
-      "http://www.tripadvisor.com/AllLocations-g191-c1-Hotels-United_States.html"
+      "http://localhost/AllLocations-g1-c1-Hotels-World.html"
   ]
   log = None
   total_count = 0L
@@ -41,9 +42,13 @@ class TarantulaSpider(Spider):
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
     if links:
+      current_level = long(response.meta.get('area_level') or 1)
       for link in links:
         count += 1
         area_name = helper.place_sel_name.findall(link)[0]
+        if current_level == 1L and not self.check_allowed(area_name):
+          continue
+        print area_name
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
         request = Request(area_link, callback=self.parse, errback=self.parse_err)
         request.meta['area_name'] = area_name
@@ -70,7 +75,7 @@ class TarantulaSpider(Spider):
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
-          if PlaceHs.check_by_url(area_link):
+          if LocationHs.check_by_url(area_link):
             scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
             continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
@@ -91,7 +96,6 @@ class TarantulaSpider(Spider):
       self.log.error(failure.getErrorMessage())
       self.log.error(failure.getBriefTraceback())
       
-
   def parse_place(self, response):
     if response.meta.get('area_name') and self.log:
       scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
@@ -111,8 +115,8 @@ class TarantulaSpider(Spider):
     item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
     item['page_body'] = helper.get_body(sel)
     links = {
-      'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
-      'fr': sel.xpath(helper.SEL_FRENCH_PAGE).extract(),
+      #'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
+      #'fr': sel.xpath(helper.SEL_FRENCH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
       # 'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
     }
@@ -123,7 +127,7 @@ class TarantulaSpider(Spider):
         return None
       links[name] = link[0]
     request = Request(links['ja'], callback=self.parse_local_page)
-    request.meta['remain'] = ['ja', 'es', 'fr']
+    request.meta['remain'] = ['ja']
     request.meta['links'] = links
     request.meta['item'] = item
     return request
@@ -150,3 +154,53 @@ class TarantulaSpider(Spider):
       request.meta['item'] = item
       return request
     return item
+
+  def check_allowed(self, country):
+    return country.lower() in self.get_allowed_countries
+
+  @property
+  def get_allowed_countries(self):
+    return [u'ukraine',
+      u'france',
+      u'spain',
+      u'sweden',
+      u'norway',
+      u'germany',
+      u'finland',
+      u'poland',
+      u'italy',
+      u'united kingdom',
+      u'romania',
+      u'belarus',
+      u'greece',
+      u'bulgaria',
+      u'iceland',
+      u'hungary',
+      u'portugal',
+      u'serbia',
+      u'ireland',
+      u'austria',
+      u'czech republic',
+      u'ireland',
+      u'lithuania',
+      u'latvia',
+      u'croatia',
+      u'bosnia and herzegovina',
+      u'slovakia',
+      u'estonia',
+      u'denmark',
+      u'the netherlands',
+      u'switzerland',
+      u'moldova',
+      u'belgium',
+      u'albania',
+      u'republic of macedonia',
+      u'slovenia',
+      u'montenegro',
+      u'cyprus',
+      u'luxembourg',
+      u'andorra',
+      u'malta',
+      u'liechtenstein',
+      u'san marino',
+      u'monaco']
