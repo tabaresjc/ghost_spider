@@ -1,0 +1,67 @@
+{
+    "index":{
+        "analysis":{
+            "filter":{
+                "kuromoji_pos" : {
+                    "type": "kuromoji_part_of_speech",
+                    "stoptags" : ["# verb-main:", "動詞-自立","助詞-格助詞-一般",
+                        "助詞-終助詞"]
+                },
+                "kuromoji_st" : {
+                    "type":"stop",
+                    "stopwords" : ["ます","これ","それ","あれ","この","その","あの","ここ","そこ","あそこ","こちら","どこ",
+                                    "だれ","なに","なん","何","私","貴方","貴方方","我々","私達","あの人","あのかた",
+                                    "彼女","彼","です","あります","おります","います","は","が","の","に","を","で",
+                                    "え","から","まで","より","も","どの","と","し","それで","しかし","た","だ","ました"]
+                },
+                "kuromoji_syn" : {
+                    "type":"synonym",
+                    "synonyms_path":"luxeyssyn_ja.txt"
+                },
+                "kuromoji_ks" : {
+                    "type": "kuromoji_stemmer",
+                    "minimum_length" : 6
+                },
+                "romaji_readingform" : {
+                    "type" : "kuromoji_readingform",
+                    "use_romaji" : true
+                },
+                "katakana_readingform" : {
+                    "type" : "kuromoji_readingform",
+                    "use_romaji" : false
+                }
+            },
+            "tokenizer" : {
+                "kuromoji_user_dict" : {
+                   "type" : "kuromoji_tokenizer",
+                   "mode" : "search",
+                   "discard_punctuation" : "false",
+                   "user_dictionary" : "luxeysdict_ja.txt"
+                }
+            },
+            "analyzer" : {
+                "my_analyzer" : {
+                    "type" : "custom",
+                    "tokenizer" : "kuromoji_user_dict",
+                    "filter" : ["kuromoji_st","kuromoji_syn"]
+                },
+                "romaji_analyzer" : {
+                    "tokenizer" : "kuromoji_tokenizer",
+                    "filter" : ["romaji_readingform","lowercase"]
+                },
+                "katakana_analyzer" : {
+                    "tokenizer" : "kuromoji_tokenizer",
+                    "filter" : ["katakana_readingform"]
+                },
+                "baseform_analyzer":{
+                    "tokenizer" : "kuromoji_tokenizer",
+                    "filter" : ["kuromoji_baseform","kuromoji_st"]
+                },
+                "lower_analyzer" : {
+                    "tokenizer" : "keyword",
+                    "filter" : ["lowercase"]
+                }
+            }
+        }
+    }
+}
