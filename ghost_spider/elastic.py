@@ -375,7 +375,7 @@ class PlaceHs(Elastic):
     return result["hits"]["total"] > 0
 
   @classmethod
-  def bulk_place(self, data, action="update"):
+  def bulk_place(cls, data, action="update"):
     """Build the bulk for a picture.
 
     action: str [create, update]
@@ -385,8 +385,8 @@ class PlaceHs(Elastic):
 
     """
     bulk_header = {
-      action: {"_index": self.index,
-      "_type": self.type, "_id": data["id"]}
+      action: {"_index": cls.index,
+      "_type": cls.type, "_id": data["id"]}
     }
     if "id" in data:
       del data["id"]

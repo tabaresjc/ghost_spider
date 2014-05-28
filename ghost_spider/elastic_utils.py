@@ -8,14 +8,17 @@ def fix_data_mistake():
   from ghost_spider.elastic import PlaceHs
   page = 1
   limit = 1000
+  sort = [{"place.address_region": "asc"}]
   while True:
-    places, total = PlaceHs.pager(page=page, size=limit)
-    page += 1
+    places, total = PlaceHs.pager(page=page, size=limit, sort=sort)
+    print "*-" * 50
     if not places or not len(places):
-      print "*-" * 50
       print "Finito!!!!"
-      print "*-" * 50
       break
+    else:
+      print u'Currently in page = %s' % page
+    print "*-" * 50
+    page += 1
     bulk = u''
     for p in places:
       print u'Update %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name'])
