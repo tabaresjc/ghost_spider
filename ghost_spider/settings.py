@@ -63,8 +63,6 @@ LOG_OUTPUT_FILE_INFO = "/Users/jctt/Developer/crawler/output/info-log.txt"
 
 LOG_ENABLED = True
 LOG_FILE = LOG_OUTPUT_FILE_INFO
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
 LOG_STDOUT = False
 HTTPERROR_ALLOW_ALL = True
-
-ES_DEBUG_MODE = 1

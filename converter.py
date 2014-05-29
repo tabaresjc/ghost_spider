@@ -98,13 +98,13 @@ def index_elastic(index, action="create", config_file=None):
   if action == "create":
     try:
       es.request(method="get", myindex=index, mysuffix="_settings")
-    except Exception:
+    except:
       es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema('schema/index_%s.json' % config_file))
   elif action == "force":
     #force creation i.e delete and then create
     try:
       es.request(method="delete", myindex=index)
-    except Exception:
+    except:
       pass
     es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema('schema/index_%s.json' % config_file))
 

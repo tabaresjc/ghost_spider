@@ -14,59 +14,11 @@ class GhostSpiderItem(Item):
   page_breadcrumbs = Field()
   name = Field()
   place = Field()
-  name_ja = Field()
-  name_es = Field()
-  name_zh = Field()
-  name_fr = Field()
-
-  # address of place
-  address_area_name = Field()
-  address_street = Field()
-  address_locality = Field()
-  address_region = Field()
-  address_zip = Field()
-
-  address_area_name_ja = Field()
-  address_street_ja = Field()
-  address_locality_ja = Field()
-  address_region_ja = Field()
-  address_zip_ja = Field()
-
-  address_area_name_es = Field()
-  address_street_es = Field()
-  address_locality_es = Field()
-  address_region_es = Field()
-  address_zip_es = Field()
-
-  address_zh = Field()
-  address_area_name_zh = Field()
-  address_street_zh = Field()
-  address_locality_zh = Field()
-  address_region_zh = Field()
-  address_zip_zh = Field()
-
-  address_fr = Field()
-  address_area_name_fr = Field()
-  address_street_fr = Field()
-  address_locality_fr = Field()
-  address_region_fr = Field()
-  address_zip_fr = Field()
-
+  region = Field()
   # phone number
   phone = Field()
   url = Field()
-  amenity = Field()
-  amenity_ja = Field()
-  amenity_es = Field()
-  amenity_fr = Field()
-  amenity_zh = Field()
 
   # popularity
   rating = Field()
   popularity = Field()
-  
-  page_body = Field()
-  page_body_ja = Field()
-  page_body_es = Field()
-  page_body_fr = Field()
-  page_body_zh = Field()

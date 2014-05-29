@@ -2,7 +2,7 @@
 
 import json
 import datetime
-from settings import es, ES_DEBUG_MODE
+from settings import es
 import hashlib
 
 
@@ -52,13 +52,15 @@ class Elastic(object):
 
     #check json data
     json.dumps(my_data)
-
+    data_id = my_data.get("id") or ''
+    if my_data.get("id"):
+      del my_data['id']
     conn = cls.get_connection()
-    conn.request(
+    return conn.request(
         method="post",
         myindex=cls.index,
         mytype=cls.type,
-        myID=my_data.get("id") or '',
+        myID=data_id,
         myparams=my_params,
         mydata=my_data
     )
@@ -285,22 +287,18 @@ class Elastic(object):
 class LocationHs(Elastic):
 
   """List of cities area for Hair Salon."""
-  @property
-  def index(self):
-    return "crawler_test" if ES_DEBUG_MODE else "crawler"
 
-  @property
-  def type(self):
-    return "locations_test" if ES_DEBUG_MODE else "locations"
+  index = "crawler_test"
+  type = "locations_test"
 
   @classmethod
   def save(cls, data):
     """Save the area.
 
-      data: dict
+    data: dict
 
     """
-    super(LocationHs, cls).save(data, True)
+    return super(LocationHs, cls).save(data, True)
 
   @classmethod
   def get_by_id(cls, id):

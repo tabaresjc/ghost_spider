@@ -15,7 +15,7 @@ class TarantulaSpider(Spider):
   allowed_domains = ["localhost"]
   target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/Hotel_Review-g33725-d119845-Reviews-Rodeway_Inn_Branford-Branford_Connecticut.html"
   ]
   #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
   # target_base_url = "http://www.tripadvisor.com"
@@ -26,17 +26,13 @@ class TarantulaSpider(Spider):
   total_count = 0L
 
   def __init__(self, name=None, **kwargs):
-    from ghost_spider.settings import LOG_OUTPUT_FILE
-    self.log = logging.getLogger(self.name)
-    ch = logging.FileHandler(LOG_OUTPUT_FILE)
-    formatter = logging.Formatter('%(asctime)s - %(message)s')
-    ch.setLevel(logging.ERROR)
-    ch.setFormatter(formatter)
-    self.log.addHandler(ch)
     self.total_count = 0L
+    self.log.error("*-" * 50)
+    self.log.error('Starting...')
     super(TarantulaSpider, self).__init__(self.name, **kwargs)
 
-  def parse(self, response):
+  def parse1(self, response):
+    """Go through the sitemap and fetch hotels/restaurant/spot pages."""
     count = 0
     download_list = None
     current_level = long(response.meta.get('area_level') or 1)
@@ -100,10 +96,12 @@ class TarantulaSpider(Spider):
       scrapyLog.msg(message, level=scrapyLog.INFO)
 
   def parse_err(self, failure):
+    """save in the log failure."""
     # save in the log the pages that couldn't be scrapped
     self.log.error(u'%s -- %s' % (failure.getErrorMessage(), failure.getBriefTraceback()))
     
-  def parse_place(self, response):
+  def parse(self, response):
+    """Parse hotel/restaurant/spot page."""
     if response.meta.get('area_name') and self.log:
       scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
     sel = Selector(response)
@@ -115,8 +113,9 @@ class TarantulaSpider(Spider):
     item['phone'] = sel.xpath(helper.SEL_PHONE_NUMBER).extract()
     item['rating'] = sel.xpath(helper.SEL_RATING).re(r'(.*)\s*of 5')
     item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
+    item['region'] = sel.xpath(helper.SEL_AREA_REGION).extract()
     place = {
-      'lang': 'es',
+      'lang': 'en',
       'name': item['name'],
       'address_area_name': sel.xpath(helper.SEL_AREA_NAME).extract(),
       'address_street': sel.xpath(helper.SEL_AREA_STREET).extract(),
@@ -152,6 +151,7 @@ class TarantulaSpider(Spider):
     return request
 
   def parse_local_page(self, response):
+    """Parse hotel/restaurant/spot page in different language."""
     current_lang = response.meta['remain'][0]
     remain = response.meta['remain'][1:]
     sel = Selector(response)
@@ -178,8 +178,23 @@ class TarantulaSpider(Spider):
       return request
     return item
 
-  def need_french_page(breadcrumbs):
+  def need_french_page(self, breadcrumbs):
     return u'France' in breadcrumbs
 
-  def need_spanish_page(breadcrumbs):
+  def need_spanish_page(self, breadcrumbs):
     return u'Spain' in breadcrumbs
+
+  @property
+  def log(self):
+    """return error log handler."""
+    try:
+      return self._log
+    except:
+      from ghost_spider.settings import LOG_OUTPUT_FILE
+      self._log = logging.getLogger(self.name)
+      ch = logging.FileHandler(LOG_OUTPUT_FILE)
+      formatter = logging.Formatter('%(asctime)s - %(message)s')
+      ch.setLevel(logging.ERROR)
+      ch.setFormatter(formatter)
+      self._log.addHandler(ch)
+      return self._log
