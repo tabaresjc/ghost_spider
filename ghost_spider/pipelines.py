@@ -59,5 +59,5 @@ class GhostSpiderPipeline(object):
     item_es['area5'] = item['page_breadcrumbs'][4].strip() if len(item['page_breadcrumbs']) > 4 else u''
     item_es['region'] = item['region'].strip()
     item_es['place'] = item['place']
-    item_es['id'] = LocationHs.get_hash(item_es['name_low'])
+    item_es['id'] = LocationHs.get_hash(item_es['page_url'])
     return item_es

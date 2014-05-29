@@ -5,11 +5,14 @@ from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 def remove_hotels():
   from ghost_spider.elastic import LocationHs
-  hotels = []
+  hotels = [line.strip() for line in open("output/erase_hotels.txt", "r")]
+  count = 0
+  print ".*" * 50
   for name in hotels:
     result = LocationHs.get_place_by_name(name, fields=['name'])
-    if result["hits"]["total"] > 0:
-      print "Deleting: %s total(%s)" % (name, result["hits"]["total"])
+    if result["hits"]["total"] == 1:
+      count += 1
+      print u'%s' % name
       LocationHs.delete({'id': result["hits"]["hits"][0]["_id"]})
 
 
