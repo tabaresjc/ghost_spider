@@ -42,8 +42,6 @@ class TarantulaSpider(Spider):
     #Get the list of countries that needs to be scrapped
     if current_level == 1:
       download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
-      if not download_list or not len(download_list):
-        return None
       download_list = download_list[0].split(u',')
     if links:
       for link in links:
@@ -52,11 +50,9 @@ class TarantulaSpider(Spider):
         # skip country if is not in the list
         if download_list and current_level == 1 and area_name.lower() not in download_list:
           continue
-        print area_name
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
         request = Request(area_link, callback=self.parse, errback=self.parse_err)
         request.meta['area_name'] = area_name
-        # Go to the next level
         request.meta['area_level'] = current_level + 1
         yield request
     else:
