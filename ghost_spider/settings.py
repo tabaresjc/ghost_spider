@@ -57,12 +57,12 @@ def setup_elastic_connection():
   return es_requester
 es = setup_elastic_connection()
 
-CSV_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/data.csv"
-LOG_OUTPUT_FILE = "/Users/jctt/Developer/crawler/output/error-log.txt"
-LOG_OUTPUT_FILE_INFO = "/Users/jctt/Developer/crawler/output/info-log.txt"
+CSV_OUTPUT_FILE = "output/data.csv"
+LOG_OUTPUT_FILE = "output/error-log.txt"
+LOG_OUTPUT_FILE_INFO = "output/info-log.txt"
 
 LOG_ENABLED = True
 LOG_FILE = LOG_OUTPUT_FILE_INFO
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 LOG_STDOUT = False
 HTTPERROR_ALLOW_ALL = True

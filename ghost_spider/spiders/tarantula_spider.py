@@ -12,16 +12,16 @@ from ghost_spider.elastic import LocationHs
 
 class TarantulaSpider(Spider):
   name = "tarantula"
-  allowed_domains = ["localhost"]
-  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
-  start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/Hotel_Review-g33725-d119845-Reviews-Rodeway_Inn_Branford-Branford_Connecticut.html"
-  ]
-  #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
-  # target_base_url = "http://www.tripadvisor.com"
+  # allowed_domains = ["localhost"]
+  # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   # start_urls = [
-  #     "http://localhost/AllLocations-g1-c1-Hotels-World.html"
+  #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/Hotel_Review-g33725-d119845-Reviews-Rodeway_Inn_Branford-Branford_Connecticut.html"
   # ]
+  allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  target_base_url = "http://www.tripadvisor.com"
+  start_urls = [
+      "http://localhost/AllLocations-g1-c1-Hotels-World.html"
+  ]
   log = None
   total_count = 0L
 
@@ -31,7 +31,7 @@ class TarantulaSpider(Spider):
     self.log.error('Starting...')
     super(TarantulaSpider, self).__init__(self.name, **kwargs)
 
-  def parse1(self, response):
+  def parse(self, response):
     """Go through the sitemap and fetch hotels/restaurant/spot pages."""
     count = 0
     download_list = None
@@ -39,12 +39,12 @@ class TarantulaSpider(Spider):
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
 
-    # Get the list of countries that needs to be scrapped
-    # if current_level == 1:
-    #   download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
-    #   if not download_list or not len(download_list):
-    #     return None
-    #   download_list = download_list[0].split(u',')
+    #Get the list of countries that needs to be scrapped
+    if current_level == 1:
+      download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
+      if not download_list or not len(download_list):
+        return None
+      download_list = download_list[0].split(u',')
     if links:
       for link in links:
         count += 1
@@ -100,7 +100,7 @@ class TarantulaSpider(Spider):
     # save in the log the pages that couldn't be scrapped
     self.log.error(u'%s -- %s' % (failure.getErrorMessage(), failure.getBriefTraceback()))
     
-  def parse(self, response):
+  def parse_place(self, response):
     """Parse hotel/restaurant/spot page."""
     if response.meta.get('area_name') and self.log:
       scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
