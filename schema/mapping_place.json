@@ -1,5 +1,5 @@
 {
-  "locations": {
+  "place": {
     "properties": {
       "name_low": {
         "type": "string",

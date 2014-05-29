@@ -1,7 +1,7 @@
 #!/bin/bash
 
-index="crawler"
-type="locations"
+index="hotel"
+type="place"
 
 #force the creation of normal one (i.e. delete and then create)
 echo "Create index if exist delete it waiting for converter.py..."

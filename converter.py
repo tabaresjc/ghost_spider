@@ -23,11 +23,11 @@ def fix_data_mistake():
   """Fix data saved in a wrong way."""
   import re
   clean_state = re.compile(r'(.*)\s\(', re.DOTALL)
-  from ghost_spider.elastic import PlaceHs, LocationHs
+  from ghost_spider.elastic import LocationHs
   page = 1
   limit = 1000
   while True:
-    places, total = PlaceHs.pager(page=page, size=limit)
+    places, total = LocationHs.pager(page=page, size=limit)
     print "*-" * 50
     if not places or not len(places):
       print "Finito!!!!"
@@ -80,6 +80,30 @@ def fix_data_mistake():
     for doc_missing in result["items"]:
       if doc_missing.get("create") and doc_missing["create"]["status"] != 201:
         print "error updating or creating... %s " % doc_missing
+
+
+def fix_trail_space():
+  """Fix data saved in a wrong way!!!!."""
+  from ghost_spider.elastic import LocationHs, TmpPlace
+  page = 1
+  limit = 1000
+  while True:
+    places, total = TmpPlace.pager(page=page, size=limit)
+    print "*-" * 50
+    if not places or not len(places):
+      print "Finito!!!!"
+      break
+    else:
+      print u'Currently in page = %s' % page
+    page += 1
+
+    bulk = u''
+    for p in places:
+      p['area2'] = p['area2'].strip()
+      bulk += LocationHs.bulk_place(p)
+    print u'Sending data'
+    LocationHs.send(bulk)
+    print u'data sent'
 
 
 def index_elastic(index, action="create", config_file=None):
@@ -257,7 +281,8 @@ def main():
     'type_merge': type_merge,
     'fix_data_mistake': fix_data_mistake,
     'export_hotels_to_csv': export_hotels_to_csv,
-    'remove_hotels': remove_hotels
+    'remove_hotels': remove_hotels,
+    'fix_trail_space': fix_trail_space
   }
   command = COMMANDS[args[0]]
 

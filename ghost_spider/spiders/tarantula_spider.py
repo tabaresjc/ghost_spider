@@ -8,20 +8,17 @@ from ghost_spider import helper
 import logging
 from scrapy import log as scrapyLog
 from ghost_spider.elastic import LocationHs
+from random import randint
+from ghost_spider.settings import USER_AGENT_LIST, USER_AGENT
 
 
 class TarantulaSpider(Spider):
   name = "tarantula"
   # allowed_domains = ["localhost"]
   # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
-  # start_urls = [
-  #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/Hotel_Review-g33725-d119845-Reviews-Rodeway_Inn_Branford-Branford_Connecticut.html"
-  # ]
   allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
   target_base_url = "http://www.tripadvisor.com"
-  start_urls = [
-      "http://localhost/AllLocations-g1-c1-Hotels-World.html"
-  ]
+  start_urls = ["http://localhost/AllLocations-g1-c1-Hotels-World.html"]
   log = None
   total_count = 0L
 
@@ -42,13 +39,14 @@ class TarantulaSpider(Spider):
     #Get the list of countries that needs to be scrapped
     if current_level == 1:
       download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
-      download_list = download_list[0].split(u',')
+      if download_list:
+        download_list = download_list[0].split(u',')
     if links:
       for link in links:
         count += 1
         area_name = helper.place_sel_name.findall(link)[0]
         # skip country if is not in the list
-        if download_list and current_level == 1 and area_name.lower() not in download_list:
+        if download_list and area_name.lower() not in download_list:
           continue
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
         request = Request(area_link, callback=self.parse, errback=self.parse_err)
@@ -194,3 +192,12 @@ class TarantulaSpider(Spider):
       ch.setFormatter(formatter)
       self._log.addHandler(ch)
       return self._log
+
+  @property
+  def user_agent(self):
+    try:
+      nlen = len(USER_AGENT_LIST)
+      n = randint(0, nlen - 1)
+      return USER_AGENT_LIST[n]
+    except:
+      return USER_AGENT

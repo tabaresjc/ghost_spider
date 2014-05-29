@@ -288,8 +288,8 @@ class LocationHs(Elastic):
 
   """List of cities area for Hair Salon."""
 
-  index = "crawler_test"
-  type = "locations_test"
+  index = "hotel"
+  type = "place"
 
   @classmethod
   def save(cls, data):
@@ -403,3 +403,8 @@ class LocationHs(Elastic):
     if action == "update":
       data = {"doc": data}
     return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
+
+
+class TmpPlace(Elastic):
+  index = "crawler"
+  type = "locations"
