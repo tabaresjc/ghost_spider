@@ -13,15 +13,15 @@ from ghost_spider.elastic import LocationHs
 class TarantulaSpider(Spider):
   name = "tarantula"
   allowed_domains = ["localhost"]
-  # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
-  # start_urls = [
-  #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
-  # ]
-  #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
-  target_base_url = "http://www.tripadvisor.com"
+  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   start_urls = [
-      "http://localhost/AllLocations-g1-c1-Hotels-World.html"
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   ]
+  #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
+  # target_base_url = "http://www.tripadvisor.com"
+  # start_urls = [
+  #     "http://localhost/AllLocations-g1-c1-Hotels-World.html"
+  # ]
   log = None
   total_count = 0L
 
@@ -44,17 +44,17 @@ class TarantulaSpider(Spider):
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
 
     # Get the list of countries that needs to be scrapped
-    if current_level == 1:
-      download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
-      if not download_list or not len(download_list):
-        return None
-      download_list = download_list[0].split(u',')
+    # if current_level == 1:
+    #   download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
+    #   if not download_list or not len(download_list):
+    #     return None
+    #   download_list = download_list[0].split(u',')
     if links:
       for link in links:
         count += 1
         area_name = helper.place_sel_name.findall(link)[0]
         # skip country if is not in the list
-        if current_level == 1 and area_name.lower() not in download_list:
+        if download_list and current_level == 1 and area_name.lower() not in download_list:
           continue
         print area_name
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
@@ -108,26 +108,37 @@ class TarantulaSpider(Spider):
       scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
     sel = Selector(response)
     item = GhostSpiderItem()
+    
     item['page_url'] = response.url
     item['page_breadcrumbs'] = sel.xpath(helper.SEL_BREADCRUMBS).extract()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
     item['phone'] = sel.xpath(helper.SEL_PHONE_NUMBER).extract()
-    item['address_area_name'] = sel.xpath(helper.SEL_AREA_NAME).extract()
-    item['address_street'] = sel.xpath(helper.SEL_AREA_STREET).extract()
-    item['address_locality'] = sel.xpath(helper.SEL_AREA_LOCALITY).extract()
-    item['address_region'] = sel.xpath(helper.SEL_AREA_REGION).extract()
-    item['address_zip'] = sel.xpath(helper.SEL_AREA_ZIP).extract()
-    item['amenity'] = sel.xpath(helper.SEL_AMENITIES).extract()
     item['rating'] = sel.xpath(helper.SEL_RATING).re(r'(.*)\s*of 5')
     item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
-    item['page_body'] = helper.get_body(sel)
+    place = {
+      'lang': 'es',
+      'name': item['name'],
+      'address_area_name': sel.xpath(helper.SEL_AREA_NAME).extract(),
+      'address_street': sel.xpath(helper.SEL_AREA_STREET).extract(),
+      'address_locality': sel.xpath(helper.SEL_AREA_LOCALITY).extract(),
+      'address_region': sel.xpath(helper.SEL_AREA_REGION).extract(),
+      'address_zip': sel.xpath(helper.SEL_AREA_ZIP).extract(),
+      'amenity': sel.xpath(helper.SEL_AMENITIES).extract(),
+      'page_body': helper.get_body(sel)
+    }
+    # save list of places by language
+    item['place'] = [place]
+
     links = {
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
     }
+    remain = ['ja']
     if self.need_french_page(item['page_breadcrumbs']):
       links['fr'] = sel.xpath(helper.SEL_FRENCH_PAGE).extract()
+      remain.append('fr')
     elif self.need_spanish_page(item['page_breadcrumbs']):
       links['es'] = sel.xpath(helper.SEL_SPANISH_PAGE).extract()
+      remain.append('es')
 
     for name, link in links.iteritems():
       if not link:
@@ -135,24 +146,28 @@ class TarantulaSpider(Spider):
         return None
       links[name] = link[0]
     request = Request(links['ja'], callback=self.parse_local_page)
-    request.meta['remain'] = ['ja']
+    request.meta['remain'] = remain
     request.meta['links'] = links
     request.meta['item'] = item
     return request
 
   def parse_local_page(self, response):
-    current = response.meta['remain'][0]
+    current_lang = response.meta['remain'][0]
     remain = response.meta['remain'][1:]
     sel = Selector(response)
     item = response.meta['item']
-    item['name_%s' % current] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
-    item['address_area_name_%s' % current] = sel.xpath(helper.SEL_AREA_NAME).extract()
-    item['address_street_%s' % current] = sel.xpath(helper.SEL_AREA_STREET).extract()
-    item['address_locality_%s' % current] = sel.xpath(helper.SEL_AREA_LOCALITY).extract()
-    item['address_region_%s' % current] = sel.xpath(helper.SEL_AREA_REGION).extract()
-    item['address_zip_%s' % current] = sel.xpath(helper.SEL_AREA_ZIP).extract()
-    item['amenity_%s' % current] = sel.xpath(helper.SEL_AMENITIES).extract()
-    item['page_body_%s' % current] = helper.get_body(sel)
+    place = {
+      'lang': current_lang,
+      'name': sel.xpath(helper.SEL_HOTEL_NAME).extract(),
+      'address_area_name': sel.xpath(helper.SEL_AREA_NAME).extract(),
+      'address_street': sel.xpath(helper.SEL_AREA_STREET).extract(),
+      'address_locality': sel.xpath(helper.SEL_AREA_LOCALITY).extract(),
+      'address_region': sel.xpath(helper.SEL_AREA_REGION).extract(),
+      'address_zip': sel.xpath(helper.SEL_AREA_ZIP).extract(),
+      'amenity': sel.xpath(helper.SEL_AMENITIES).extract(),
+      'page_body': helper.get_body(sel)
+    }
+    item['place'].append(place)
     if remain and len(remain) > 0:
       from ghost_spider.settings import REQUEST_HEADERS
       next_lang = remain[0]

@@ -13,6 +13,7 @@ class GhostSpiderItem(Item):
   page_url = Field()
   page_breadcrumbs = Field()
   name = Field()
+  place = Field()
   name_ja = Field()
   name_es = Field()
   name_zh = Field()

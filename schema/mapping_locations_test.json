@@ -1,0 +1,115 @@
+{
+  "locations_test": {
+    "properties": {
+      "name_low": {
+        "type": "string",
+        "analyzer": "lower_analyzer"
+      },
+      "page_breadcrumbs": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "page_url": {
+        "type": "string",
+        "analyzer": "lower_analyzer"
+      },
+      "phone": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "place": {
+        "properties": {
+          "address_area_name": {
+            "type": "string"
+          },
+          "address_locality": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "address_region": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "address_street": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "address_zip": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "amenity": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "lang": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "name": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "page_body": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "popularity": {
+        "type": "double"
+      },
+      "rating": {
+        "type": "double"
+      },
+      "region": {
+        "type": "string"
+      },
+      "area1": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "area2": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "area3": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "area4": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "area5": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      }          
+    }
+  }
+}

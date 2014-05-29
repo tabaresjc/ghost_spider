@@ -2,7 +2,7 @@
 
 import json
 import datetime
-from settings import es
+from settings import es, ES_DEBUG_MODE
 import hashlib
 
 
@@ -285,9 +285,13 @@ class Elastic(object):
 class LocationHs(Elastic):
 
   """List of cities area for Hair Salon."""
+  @property
+  def index(self):
+    return "crawler_test" if ES_DEBUG_MODE else "crawler"
 
-  index = "crawler"
-  type = "locations"
+  @property
+  def type(self):
+    return "locations_test" if ES_DEBUG_MODE else "locations"
 
   @classmethod
   def save(cls, data):
