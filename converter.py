@@ -5,24 +5,7 @@ from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 def remove_hotels():
   from ghost_spider.elastic import LocationHs
-  hotels = [
-    u'Days Inn',
-    u'Days Inn Miami Airport North',
-    u'Courtyard New York Manhattan/Central Park',
-    u'Hyatt Place New York Midtown South',
-    u'The Jade Hotel',
-    u'Hotel Pennsylvania New York',
-    u'Fairfield Inn & Suites by Marriott New York Manhattan / Times Square',
-    u'New York Marriott Marquis',
-    u'New York Hilton Midtown',
-    u'Element New York Times Square West',
-    u'Park Lane Hotel',
-    u'Soho Grand Hotel',
-    u'The West Tower at ONE UN Plaza',
-    u'SIXTY LES',
-    u'Crowne Plaza Times Square Manhattan',
-    u'The Wyndham Midtown 45'
-  ]
+  hotels = []
   for name in hotels:
     result = LocationHs.get_place_by_name(name, fields=['name'])
     if result["hits"]["total"] > 0:

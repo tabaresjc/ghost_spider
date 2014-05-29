@@ -4,6 +4,7 @@ import re
 
 # selector for country, prefectures and areas
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'
+SEL_ALLOW_PLACES = '//div[@id="download_countries"]/text()'
 
 SEL_LIST_MORE = '//div[@id="BODYCON"]/div[contains(text(),"More Accommodations")]/a'
 place_sel_name = re.compile(r'Lodging in\s*(.*)<', re.DOTALL)

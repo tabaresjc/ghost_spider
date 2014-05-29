@@ -12,13 +12,12 @@ from ghost_spider.elastic import LocationHs
 
 class TarantulaSpider(Spider):
   name = "tarantula"
-  # allowed_domains = ["localhost"]
+  allowed_domains = ["localhost"]
   # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
   # start_urls = [
   #     "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
   # ]
   #allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
-  allowed_domains = ["localhost"]
   target_base_url = "http://www.tripadvisor.com"
   start_urls = [
       "http://localhost/AllLocations-g1-c1-Hotels-World.html"
@@ -39,20 +38,30 @@ class TarantulaSpider(Spider):
 
   def parse(self, response):
     count = 0
+    download_list = None
+    current_level = long(response.meta.get('area_level') or 1)
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
+
+    # Get the list of countries that needs to be scrapped
+    if current_level == 1:
+      download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
+      if not download_list or not len(download_list):
+        return None
+      download_list = download_list[0].split(u',')
     if links:
-      current_level = long(response.meta.get('area_level') or 1)
       for link in links:
         count += 1
         area_name = helper.place_sel_name.findall(link)[0]
-        if current_level == 1L and not self.check_allowed(area_name):
+        # skip country if is not in the list
+        if current_level == 1 and area_name.lower() not in download_list:
           continue
         print area_name
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
         request = Request(area_link, callback=self.parse, errback=self.parse_err)
         request.meta['area_name'] = area_name
-        request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
+        # Go to the next level
+        request.meta['area_level'] = current_level + 1
         yield request
     else:
       # possible last level
@@ -68,7 +77,7 @@ class TarantulaSpider(Spider):
             request = Request(area_link, callback=self.parse, errback=self.parse_err)
             request.meta['area_name'] = area_name
             request.meta['is_more'] = True
-            request.meta['area_level'] = long(response.meta.get('area_level') or 1)
+            request.meta['area_level'] = current_level
             scrapyLog.msg('Loading more pages, %s' % area_link, level=scrapyLog.INFO)
             yield request
         for link in links:
@@ -80,22 +89,20 @@ class TarantulaSpider(Spider):
             continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
-          request.meta['area_level'] = long(response.meta.get('area_level') or 1) + 1
+          request.meta['area_level'] = current_level + 1
           yield request
           count += 1
         self.total_count += count
         print u'found = %s' % self.total_count
     if response.meta.get('area_name'):
-      message = u'%s> %s found(%s) | total(%s)' % ('-----' * response.meta.get('area_level') or 1, response.meta['area_name'], count, self.total_count)
+      message = u'%s> %s found(%s) | total(%s)' % ('-----' * current_level, response.meta['area_name'], count, self.total_count)
       print message
       scrapyLog.msg(message, level=scrapyLog.INFO)
 
   def parse_err(self, failure):
     # save in the log the pages that couldn't be scrapped
-    if self.log:
-      self.log.error(failure.getErrorMessage())
-      self.log.error(failure.getBriefTraceback())
-      
+    self.log.error(u'%s -- %s' % (failure.getErrorMessage(), failure.getBriefTraceback()))
+    
   def parse_place(self, response):
     if response.meta.get('area_name') and self.log:
       scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
@@ -115,11 +122,12 @@ class TarantulaSpider(Spider):
     item['popularity'] = sel.xpath(helper.SEL_PERCENT).re(r'(.*)\s*%')
     item['page_body'] = helper.get_body(sel)
     links = {
-      #'es': sel.xpath(helper.SEL_SPANISH_PAGE).extract(),
-      #'fr': sel.xpath(helper.SEL_FRENCH_PAGE).extract(),
       'ja': sel.xpath(helper.SEL_JAPANESE_PAGE).extract(),
-      # 'zh': sel.xpath(helper.SEL_CHINESE_PAGE).extract()
     }
+    if self.need_french_page(item['page_breadcrumbs']):
+      links['fr'] = sel.xpath(helper.SEL_FRENCH_PAGE).extract()
+    elif self.need_spanish_page(item['page_breadcrumbs']):
+      links['es'] = sel.xpath(helper.SEL_SPANISH_PAGE).extract()
 
     for name, link in links.iteritems():
       if not link:
@@ -155,52 +163,8 @@ class TarantulaSpider(Spider):
       return request
     return item
 
-  def check_allowed(self, country):
-    return country.lower() in self.get_allowed_countries
+  def need_french_page(breadcrumbs):
+    return u'France' in breadcrumbs
 
-  @property
-  def get_allowed_countries(self):
-    return [u'ukraine',
-      u'france',
-      u'spain',
-      u'sweden',
-      u'norway',
-      u'germany',
-      u'finland',
-      u'poland',
-      u'italy',
-      u'united kingdom',
-      u'romania',
-      u'belarus',
-      u'greece',
-      u'bulgaria',
-      u'iceland',
-      u'hungary',
-      u'portugal',
-      u'serbia',
-      u'ireland',
-      u'austria',
-      u'czech republic',
-      u'ireland',
-      u'lithuania',
-      u'latvia',
-      u'croatia',
-      u'bosnia and herzegovina',
-      u'slovakia',
-      u'estonia',
-      u'denmark',
-      u'the netherlands',
-      u'switzerland',
-      u'moldova',
-      u'belgium',
-      u'albania',
-      u'republic of macedonia',
-      u'slovenia',
-      u'montenegro',
-      u'cyprus',
-      u'luxembourg',
-      u'andorra',
-      u'malta',
-      u'liechtenstein',
-      u'san marino',
-      u'monaco']
+  def need_spanish_page(breadcrumbs):
+    return u'Spain' in breadcrumbs
