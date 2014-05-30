@@ -22,69 +22,6 @@ def export_hotels_to_csv():
   exporter.dump()
 
 
-def fix_data_mistake():
-  """Fix data saved in a wrong way."""
-  import re
-  clean_state = re.compile(r'(.*)\s\(', re.DOTALL)
-  from ghost_spider.elastic import LocationHs
-  page = 1
-  limit = 1000
-  while True:
-    places, total = LocationHs.pager(page=page, size=limit)
-    print "*-" * 50
-    if not places or not len(places):
-      print "Finito!!!!"
-      break
-    else:
-      print u'Currently in page = %s' % page
-    page += 1
-    bulk = u''
-    for p in places:
-      p['region'] = p['place'][0]['address_region']
-      state = clean_state.findall(p['area2'])
-      if state and len(state):
-        p['area2'] = state[0]
-      location = {}
-      for key, value in p.iteritems():
-        if key == u'place':
-          new_place = []
-          for el in value:
-            new_el = {}
-            for k, v in el.iteritems():
-              if k == u'lang':
-                new_el[u'lang'] = v
-              elif k.startswith(u'name'):
-                new_el[u'name'] = v
-              elif k.startswith(u'amenity'):
-                new_el[u'amenity'] = v
-              elif k.startswith(u'address_locality'):
-                new_el[u'address_locality'] = v
-              elif k.startswith(u'address_area_name'):
-                new_el[u'address_area_name'] = v
-              elif k.startswith(u'address_region'):
-                new_el[u'address_region'] = v
-              elif k.startswith(u'address_street'):
-                new_el[u'address_street'] = v
-              elif k.startswith(u'address_zip'):
-                new_el[u'address_zip'] = v
-              elif k.startswith(u'page_body'):
-                new_el[u'page_body'] = v
-            new_place.append(new_el)
-          location[key] = new_place
-        elif key == u'page_url':
-          location[key] = value
-          location[u'id'] = LocationHs.get_hash(value)
-        elif key == u'id':
-          pass
-        else:
-          location[key] = value
-      bulk += LocationHs.bulk_place(location)
-    result = LocationHs.send(bulk)
-    for doc_missing in result["items"]:
-      if doc_missing.get("create") and doc_missing["create"]["status"] != 201:
-        print "error updating or creating... %s " % doc_missing
-
-
 def fix_trail_space():
   """Fix data saved in a wrong way!!!!."""
   from ghost_spider.elastic import LocationHs, TmpPlace
@@ -282,7 +219,6 @@ def main():
     'type_elastic': type_elastic,
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
-    'fix_data_mistake': fix_data_mistake,
     'export_hotels_to_csv': export_hotels_to_csv,
     'remove_hotels': remove_hotels,
     'fix_trail_space': fix_trail_space
