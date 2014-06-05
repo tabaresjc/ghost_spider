@@ -22,30 +22,6 @@ def export_hotels_to_csv():
   exporter.dump()
 
 
-def fix_trail_space():
-  """Fix data saved in a wrong way!!!!."""
-  from ghost_spider.elastic import LocationHs, TmpPlace
-  page = 1
-  limit = 1000
-  while True:
-    places, total = TmpPlace.pager(page=page, size=limit)
-    print "*-" * 50
-    if not places or not len(places):
-      print "Finito!!!!"
-      break
-    else:
-      print u'Currently in page = %s' % page
-    page += 1
-
-    bulk = u''
-    for p in places:
-      p['area2'] = p['area2'].strip()
-      bulk += LocationHs.bulk_place(p)
-    print u'Sending data'
-    LocationHs.send(bulk)
-    print u'data sent'
-
-
 def index_elastic(index, action="create", config_file=None):
   """Create index or force i.e. delete if exist then create it.
 
@@ -120,7 +96,6 @@ def _copy_type(typeEs, type_from, type_to):
   #build bulk
   size = 100
   page = 0
-  total = typeEs.count()
   while True:
     start_from = page * size
     results = typeEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
@@ -162,7 +137,6 @@ def _check_repository(es, name):
       }
     }
     es.request(method="put", mysuffix="_snapshot/%s" % (name), mydata=repository)
-
 
 
 def create_repository(name):
@@ -220,8 +194,7 @@ def main():
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
     'export_hotels_to_csv': export_hotels_to_csv,
-    'remove_hotels': remove_hotels,
-    'fix_trail_space': fix_trail_space
+    'remove_hotels': remove_hotels
   }
   command = COMMANDS[args[0]]
 

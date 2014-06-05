@@ -1,0 +1,3 @@
+Scrapy==0.22.2
+SlimES==0.0.2
+Flask==0.10.1

@@ -1,24 +1,24 @@
-To have launchd start elasticsearch at login:
-    ln -sfv /usr/local/opt/elasticsearch/*.plist ~/Library/LaunchAgents
-Then to load elasticsearch now:
-    launchctl load ~/Library/LaunchAgents/homebrew.mxcl.elasticsearch.plist
-Or, if you don't want/need launchctl, you can just run:
-    elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml
-==> Summary
-🍺  /usr/local/Cellar/elasticsearch/1.1.1: 31 files, 21M, built in 41 seconds
-elasticsearch: stable 1.1.1, HEAD
-http://www.elasticsearch.org
-/usr/local/Cellar/elasticsearch/1.1.1 (31 files, 21M) *
-  Built from source
-From: https://github.com/Homebrew/homebrew/commits/master/Library/Formula/elasticsearch.rb
-==> Caveats
-Data:    /usr/local/var/elasticsearch/elasticsearch_jctt/
-Logs:    /usr/local/var/log/elasticsearch/elasticsearch_jctt.log
-Plugins: /usr/local/var/lib/elasticsearch/plugins/
+- ElasticSearch 1.x
 
-To have launchd start elasticsearch at login:
-    ln -sfv /usr/local/opt/elasticsearch/*.plist ~/Library/LaunchAgents
-Then to load elasticsearch now:
-    launchctl load ~/Library/LaunchAgents/homebrew.mxcl.elasticsearch.plist
-Or, if you don't want/need launchctl, you can just run:
-    elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml
+  [Installation]
+    JDK MUST be oracle JDK 1.7 others JDK have problems
+    http://exploringelasticsearch.com/book/elasticsearch-at-scale-interviews/interview-with-the-github-elasticsearch-team.html
+    http://www.elasticsearch.org/
+
+      After installing elasticSearch:
+      - Copy the dictionary & synonyms
+        sudo cp /schema/luxeysdict_ja.txt /etc/elasticsearch/
+        sudo cp /schema/luxeyssyn_ja.txt /etc/elasticsearch/
+
+      - Install plugins (from /usr/share/elasticsearch/ [default directory])
+          #used for analysing the Japanese data (must install)
+          #
+          # /!\ BE CAREFUL with the version check the website to be sure that the plugin work with your elastic
+          #
+          bin/plugin -install elasticsearch/elasticsearch-analysis-kuromoji/2.0.0
+          copy the change from the schema/elasticsearch.yml to /etc/elaticsearch/elasticsearch.yml
+          Restart elastic "/etc/init.d/elasticsearch restart"
+          #run the script to setup index and type
+          /scripts/setup.sh
+
+- Python Libraries: Install the required python libraries listed in requeriments.txt
