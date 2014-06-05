@@ -16,7 +16,7 @@ def remove_hotels():
       LocationHs.delete({'id': result["hits"]["hits"][0]["_id"]})
 
 
-def export_hotels_to_csv():
+def export_hotels_to_csv(name="US"):
   from ghost_spider.util import LocationHotelsToCsvFiles
   exporter = LocationHotelsToCsvFiles()
   exporter.dump()
@@ -169,6 +169,40 @@ def _read_schema(filename):
       f.close()
 
 
+def remove_restaurants_from_hotel():
+  from ghost_spider.elastic import LocationHs
+  from ghost_spider import progressbar
+  query = {
+    "query": {
+      "bool": {
+        "must": [{"wildcard": {"place.page_url": "*restaurant*"}}],
+        "must_not": [{"wildcard": {"place.page_url": "*hotel*"}}]
+      }
+    }
+  }
+  progress = None
+  limit = 100
+  page = 1
+  places, total = LocationHs.pager(query, page=page, size=limit)
+  print "Finding restaurants withing hotel"
+  while True:
+    if total <= 0:
+      break
+    if not progress:
+      progress = progressbar.AnimatedProgressBar(end=total, width=50)
+    
+    progress + limit
+    progress.show_progress()
+    places, tot = LocationHs.pager(query, page=page, size=limit)
+    if not places or not len(places):
+      break
+    for p in places:
+      LocationHs.delete({'id': p['id']})
+    total -= limit
+
+  print "Finito!!!"
+
+
 def main():
   from optparse import OptionParser
   parser = OptionParser()
@@ -194,7 +228,8 @@ def main():
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
     'export_hotels_to_csv': export_hotels_to_csv,
-    'remove_hotels': remove_hotels
+    'remove_hotels': remove_hotels,
+    'remove_restaurants_from_hotel': remove_restaurants_from_hotel
   }
   command = COMMANDS[args[0]]
 

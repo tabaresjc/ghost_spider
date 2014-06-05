@@ -12,7 +12,7 @@ class CsvWriter:
   which is encoded in the given encoding.
   """
 
-  def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+  def __init__(self, f, dialect=csv.excel, encoding="utf-8", region="US", **kwds):
     self.queue = cStringIO.StringIO()
     self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
     self.stream = f
@@ -44,17 +44,21 @@ class CsvWriter:
 
 
 class LocationHotelsToCsvFiles(object):
+  US_REGION = 0
+  UE_REGION = 1
+  region = US_REGION
   name = "ghost_spider"
   LOG_OUTPUT_FILE_INFO = "upload/info-log.txt"
   ES_SORT = [
-    {
-      "region": "asc"
-    },
-    {
-      "popularity": "desc"
-    }
+    {"region": "asc"},
+    {"popularity": "desc"}
+  ]
+  ES_SORT_STATE = [
+    {"place2.area.untouched": "asc"},
+    {"popularity": "desc"}
   ]
   TARGET_DIR_FORMAT = u'upload/crawler/hotels/%s/%s'
+  TARGET_DIR_FORMAT_STATE = u'upload/crawler/hotels/%s/%s/%s'
   first_row = [
     u'name',
     u'name_ja',
@@ -76,6 +80,18 @@ class LocationHotelsToCsvFiles(object):
     u'id'
   ]
 
+  def __init__(self, region="US", **kwargs):
+    """Class initializer.
+
+    region: string
+
+    """
+    if region == "US":
+      self.region = self.US_REGION
+    elif region == "UE":
+      self.region = self.UE_REGION
+    super(LocationHotelsToCsvFiles, self).__init__(**kwargs)
+
   @property
   def logger(self):
     """error log handler."""
@@ -95,17 +111,28 @@ class LocationHotelsToCsvFiles(object):
 
   def dump(self):
     from ghost_spider.elastic import LocationHs
+    from ghost_spider import progressbar
     page = 1
     limit = 100
     if os.path.exists('upload/'):
       shutil.rmtree('upload/')
+    parent_place = "United States"
+    sort = self.ES_SORT
+    if self.region == self.UE_REGION:
+      parent_place = "Europe"
+      sort = self.ES_SORT_STATE
+    query = {"query": {"bool": {"must": [{"term": {"place.area1.untouched": parent_place}}]}}}
+    progress = None
     while True:
-      places, total = LocationHs.pager(page=page, size=limit, sort=self.ES_SORT)
+      places, total = LocationHs.pager(query=query, page=page, size=limit, sort=sort)
       page += 1
       if not places or not len(places):
         break
+      if not progress:
+        progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      progress + limit
+      progress.show_progress()
       for p in places:
-        self.logger.error(u'Saving %s > %s > %s' % (p.get('area1'), p.get('area2'), p['place'][0]['name']))
         self.save_to_csv(p)
 
   def save_to_csv(self, item):
@@ -126,8 +153,14 @@ class LocationHotelsToCsvFiles(object):
     row.append(item.get('name_zh') or u'')
     row.append(u'%s, %s, %s %s%s' % (item['address_street'], item['address_locality'], item['address_region'], item['address_zip'], item['address_area_name']))
     row.append(u'%s, %s, %s %s%s' % (item['address_street_ja'], item['address_locality_ja'], item['address_region_ja'], item['address_zip_ja'], item['address_area_name_ja']))
-    row.append(u'%s, %s, %s %s%s' % (item['address_street_es'], item['address_locality_es'], item['address_region_es'], item['address_zip_es'], item['address_area_name_es']))
-    row.append(u'%s, %s, %s %s%s' % (item['address_street_fr'], item['address_locality_fr'], item['address_region_fr'], item['address_zip_fr'], item['address_area_name_fr']))
+    if item.get('address_street_es'):
+      row.append(u'%s, %s, %s %s%s' % (item['address_street_es'], item['address_locality_es'], item['address_region_es'], item['address_zip_es'], item['address_area_name_es']))
+    else:
+      row.append(u'')
+    if item.get('address_street_fr'):
+      row.append(u'%s, %s, %s %s%s' % (item['address_street_fr'], item['address_locality_fr'], item['address_region_fr'], item['address_zip_fr'], item['address_area_name_fr']))
+    else:
+      row.append(u'')
     if item.get('address_street_zh'):
       row.append(u'%s, %s, %s %s%s' % (item['address_street_zh'], item['address_locality_zh'], item['address_region_zh'], item['address_zip_zh'], item['address_area_name_zh']))
     else:
@@ -135,8 +168,8 @@ class LocationHotelsToCsvFiles(object):
     row.append(item['phone'])
     row.append(item['amenity'])
     row.append(item['amenity_ja'])
-    row.append(item['amenity_es'])
-    row.append(item['amenity_fr'])
+    row.append(item.get('amenity_es') or u'')
+    row.append(item.get('amenity_fr') or u'')
     row.append(item.get('amenity_zh') or u'')
     row.append(u'%s%%' % item['popularity'])
     row.append(item['id'])
@@ -146,6 +179,8 @@ class LocationHotelsToCsvFiles(object):
     if not item.get('area1') or not item.get('area2'):
       return None
     directory = self.TARGET_DIR_FORMAT % (item.get('area1').strip(), item.get('area2').strip())
+    if self.region == self.UE_REGION:
+      directory = self.TARGET_DIR_FORMAT_STATE % (item.get('area1').strip(), item.get('area2').strip(), item.get('area3').strip())
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = u'%s/%s' % (directory, filename)
