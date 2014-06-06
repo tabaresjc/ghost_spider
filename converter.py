@@ -16,9 +16,9 @@ def remove_hotels():
       LocationHs.delete({'id': result["hits"]["hits"][0]["_id"]})
 
 
-def export_hotels_to_csv(name="US"):
+def export_hotels_to_csv(name):
   from ghost_spider.util import LocationHotelsToCsvFiles
-  exporter = LocationHotelsToCsvFiles()
+  exporter = LocationHotelsToCsvFiles(name)
   exporter.dump()
 
 

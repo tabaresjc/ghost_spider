@@ -54,7 +54,7 @@ class LocationHotelsToCsvFiles(object):
     {"popularity": "desc"}
   ]
   ES_SORT_STATE = [
-    {"place2.area.untouched": "asc"},
+    {"place.area2.untouched": "asc"},
     {"popularity": "desc"}
   ]
   TARGET_DIR_FORMAT = u'upload/crawler/hotels/%s/%s'
@@ -80,7 +80,7 @@ class LocationHotelsToCsvFiles(object):
     u'id'
   ]
 
-  def __init__(self, region="US", **kwargs):
+  def __init__(self, region, **kwargs):
     """Class initializer.
 
     region: string
@@ -88,7 +88,7 @@ class LocationHotelsToCsvFiles(object):
     """
     if region == "US":
       self.region = self.US_REGION
-    elif region == "UE":
+    elif region == "EU":
       self.region = self.UE_REGION
     super(LocationHotelsToCsvFiles, self).__init__(**kwargs)
 
@@ -114,15 +114,21 @@ class LocationHotelsToCsvFiles(object):
     from ghost_spider import progressbar
     page = 1
     limit = 100
-    if os.path.exists('upload/'):
-      shutil.rmtree('upload/')
+
     parent_place = "United States"
     sort = self.ES_SORT
+    directory = 'upload/crawler/hotels/United States'
     if self.region == self.UE_REGION:
       parent_place = "Europe"
       sort = self.ES_SORT_STATE
+      directory = 'upload/crawler/hotels/Europe'
     query = {"query": {"bool": {"must": [{"term": {"place.area1.untouched": parent_place}}]}}}
+
+    if os.path.exists(directory):
+      shutil.rmtree(directory)
+
     progress = None
+    total = 0
     while True:
       places, total = LocationHs.pager(query=query, page=page, size=limit, sort=sort)
       page += 1
@@ -134,40 +140,34 @@ class LocationHotelsToCsvFiles(object):
       progress.show_progress()
       for p in places:
         self.save_to_csv(p)
+    print " "
+    print "Finito!"
+    print "*." * 50
+    print "count %s" % total
 
   def save_to_csv(self, item):
     filename = self.get_filename(item, u'hotels.csv')
     row = []
 
     for p in item['place']:
-      for k, v in p.iteritems():
-        if k == 'lang':
-          continue
-        nk = u'%s_%s' % (k, p['lang']) if p['lang'] != 'en' else k
-        item[nk] = v
+      item['name_%s' % p['lang']] = p.get('name')
+      item['amenity_%s' % p['lang']] = p.get('amenity')
+      item['address_%s' % p['lang']] = self.build_address(p)
 
-    row.append(item['name'])
-    row.append(item['name_ja'])
-    row.append(item['name_es'])
-    row.append(item['name_fr'])
+    row.append(item.get('name_en') or u'')
+    row.append(item.get('name_ja') or u'')
+    row.append(item.get('name_es') or u'')
+    row.append(item.get('name_fr') or u'')
     row.append(item.get('name_zh') or u'')
-    row.append(u'%s, %s, %s %s%s' % (item['address_street'], item['address_locality'], item['address_region'], item['address_zip'], item['address_area_name']))
-    row.append(u'%s, %s, %s %s%s' % (item['address_street_ja'], item['address_locality_ja'], item['address_region_ja'], item['address_zip_ja'], item['address_area_name_ja']))
-    if item.get('address_street_es'):
-      row.append(u'%s, %s, %s %s%s' % (item['address_street_es'], item['address_locality_es'], item['address_region_es'], item['address_zip_es'], item['address_area_name_es']))
-    else:
-      row.append(u'')
-    if item.get('address_street_fr'):
-      row.append(u'%s, %s, %s %s%s' % (item['address_street_fr'], item['address_locality_fr'], item['address_region_fr'], item['address_zip_fr'], item['address_area_name_fr']))
-    else:
-      row.append(u'')
-    if item.get('address_street_zh'):
-      row.append(u'%s, %s, %s %s%s' % (item['address_street_zh'], item['address_locality_zh'], item['address_region_zh'], item['address_zip_zh'], item['address_area_name_zh']))
-    else:
-      row.append(u'')
+
+    row.append(item.get('address_en') or u'')
+    row.append(item.get('address_ja') or u'')
+    row.append(item.get('address_es') or u'')
+    row.append(item.get('address_fr') or u'')
+    row.append(item.get('address_zh') or u'')
     row.append(item['phone'])
-    row.append(item['amenity'])
-    row.append(item['amenity_ja'])
+    row.append(item.get('amenity_en') or u'')
+    row.append(item.get('amenity_ja') or u'')
     row.append(item.get('amenity_es') or u'')
     row.append(item.get('amenity_fr') or u'')
     row.append(item.get('amenity_zh') or u'')
@@ -185,3 +185,19 @@ class LocationHotelsToCsvFiles(object):
         os.makedirs(directory)
     filename = u'%s/%s' % (directory, filename)
     return filename
+
+  def build_address(self, place):
+    address_list = []
+    if place.get('address_street'):
+      address_list.append(place['address_street'])
+    if place.get('address_locality'):
+      address_list.append(place['address_locality'])
+    if place.get('address_locality'):
+      address_list.append(place['address_locality'])
+    if place.get('address_region'):
+      address_list.append(place['address_region'])
+    if place.get('address_zip'):
+      address_list.append(place['address_zip'])
+    if place.get('address_area_name'):
+      address_list.append(place['address_area_name'])
+    return u', '.join(address_list)
