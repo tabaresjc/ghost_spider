@@ -43,12 +43,12 @@ class TarantulaSpider(Spider):
         download_list = download_list[0].split(u',')
     if links:
       for link in links:
-        count += 1
         area_name = helper.place_sel_name.findall(link)[0]
         # skip country if is not in the list
         if download_list and area_name.lower() not in download_list:
           continue
         area_link = self.target_base_url + helper.place_sel_link.findall(link)[0]
+        count += 1
         request = Request(area_link, callback=self.parse, errback=self.parse_err)
         request.meta['area_name'] = area_name
         request.meta['area_level'] = current_level + 1
@@ -74,6 +74,10 @@ class TarantulaSpider(Spider):
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
+          # if the link is not hotel don't fetch it!!
+          if not helper.FIND_HOTEL_LINK.findall(area_link):
+            scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
+            continue
           if LocationHs.check_by_url(area_link):
             scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
             continue
@@ -173,10 +177,14 @@ class TarantulaSpider(Spider):
     return item
 
   def need_french_page(self, breadcrumbs):
-    return u'France' in breadcrumbs
+    countries = [u'France', u'St Maarten-St Martin', u'Guadeloupe', u'French Guiana', u'Wallis and Futuna',
+    u'St. Barthelemy', u'Martinique', 'Saint-Pierre and Miquelon']
+    return breadcrumbs[0] in countries or breadcrumbs[1] in countries or breadcrumbs[2] in countries
 
   def need_spanish_page(self, breadcrumbs):
-    return u'Spain' in breadcrumbs
+    countries = [u'Spain', u'Mexico', u'Argentina', u'Chile', u'Ecuador', u'Peru', u'Venezuela', u'Costa Rica', u'Guatemala',
+    u'Honduras', u'El Salvador', u'Nicaragua', u'Panama', u'Uruguay', u'Bolivia', u'Colombia', u'Paraguay']
+    return breadcrumbs[0] in countries or breadcrumbs[1] in countries or breadcrumbs[2] in countries
 
   @property
   def log(self):

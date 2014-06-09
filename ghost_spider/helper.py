@@ -57,6 +57,7 @@ SEL_LOCATION_CONTENT = '//div[@id="HR_HACKATHON_CONTENT"]/div/div[contains(@clas
 
 CLEAN_STATE = re.compile(r'(.*)\s\(', re.DOTALL)
 
+FIND_HOTEL_LINK = re.compile(r'(?i)hotel', re.DOTALL)
 
 def get_body(sel):
   """extract the most relevant info from the page."""
