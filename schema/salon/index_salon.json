@@ -4,19 +4,15 @@
             "filter":{
                 "kuromoji_pos" : {
                     "type": "kuromoji_part_of_speech",
-                    "stoptags" : ["# verb-main:", "動詞-自立","助詞-格助詞-一般",
-                        "助詞-終助詞"]
+                    "stoptags" : ["# verb-main:", "動詞-自立","助詞-格助詞-一般", "助詞-終助詞"]
                 },
                 "kuromoji_st" : {
                     "type":"stop",
-                    "stopwords" : ["ます","これ","それ","あれ","この","その","あの","ここ","そこ","あそこ","こちら","どこ",
-                                    "だれ","なに","なん","何","私","貴方","貴方方","我々","私達","あの人","あのかた",
-                                    "彼女","彼","です","あります","おります","います","は","が","の","に","を","で",
-                                    "え","から","まで","より","も","どの","と","し","それで","しかし","た","だ","ました"]
+                    "stopwords_path" : "stop_ja.txt"
                 },
                 "kuromoji_syn" : {
                     "type":"synonym",
-                    "synonyms_path":"luxeyssyn_ja.txt"
+                    "synonyms_path":"syn_ja.txt"
                 },
                 "kuromoji_ks" : {
                     "type": "kuromoji_stemmer",
@@ -36,7 +32,19 @@
                    "type" : "kuromoji_tokenizer",
                    "mode" : "search",
                    "discard_punctuation" : "false",
-                   "user_dictionary" : "luxeysdict_ja.txt"
+                   "user_dictionary" : "dict_ja.txt"
+                },
+                "kuromoji_suggest_dict" : {
+                   "type" : "kuromoji_tokenizer",
+                   "mode" : "extended",
+                   "discard_punctuation" : "false",
+                   "user_dictionary" : "dict_ja.txt"
+                },
+                "kuromoji_normal_dict" : {
+                   "type" : "kuromoji_tokenizer",
+                   "mode" : "normal",
+                   "discard_punctuation" : "false",
+                   "user_dictionary" : "dict_ja.txt"
                 }
             },
             "analyzer" : {
@@ -60,6 +68,18 @@
                 "lower_analyzer" : {
                     "tokenizer" : "keyword",
                     "filter" : ["lowercase"]
+                },
+                "romaji_ascii_analyzer" : {
+                    "tokenizer" : "kuromoji_tokenizer",
+                    "filter" : ["romaji_readingform","lowercase","asciifolding"]
+                },
+                "romaji_ascii_suggest_analyzer" : {
+                    "tokenizer" : "kuromoji_suggest_dict",
+                    "filter" : ["romaji_readingform","lowercase","asciifolding"]
+                },
+                "romaji_ascii_normal_analyzer" : {
+                    "tokenizer" : "kuromoji_normal_dict",
+                    "filter" : ["romaji_readingform","lowercase","asciifolding"]
                 }
             }
         }

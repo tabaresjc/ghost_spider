@@ -3,16 +3,16 @@
 from scrapy.spider import Spider
 from scrapy.selector import Selector
 from scrapy.http import Request
-from ghost_spider.items import GhostSpiderItem
+from ghost_spider.items import HotelItem
 from ghost_spider import helper
 
 
 class DemoSpider(Spider):
   name = "demo"
   allowed_domains = ["localhost"]
-  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
+  target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/hotels"
   start_urls = [
-      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/target_list_of_places.html"
+      "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/hotels/target_list_of_places.html"
   ]
 
   def parse(self, response):
@@ -37,7 +37,7 @@ class DemoSpider(Spider):
           area_name = helper.place_sel_name_last.findall(link)[0]
           area_link = self.target_base_url + helper.place_sel_link_last.findall(link)[0]
           # don't scrap the page if it was crawled
-          #if PlaceHs.check_by_url(area_link):
+          # if PlaceHs.check_by_url(area_link):
           #  continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
@@ -54,7 +54,7 @@ class DemoSpider(Spider):
     if response.meta.get('area_name'):
       print "%s> %s" % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name'])
     sel = Selector(response)
-    item = GhostSpiderItem()
+    item = HotelItem()
     item['page_url'] = response.url
     item['page_breadcrumbs'] = sel.xpath(helper.SEL_BREADCRUMBS).extract()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()

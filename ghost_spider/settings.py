@@ -15,26 +15,27 @@ NEWSPIDER_MODULE = 'ghost_spider.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (X11; CrOS i686 4319.74.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36'
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 2
 COOKIES_ENABLED = False
 
 
 ITEM_PIPELINES = {
-    'ghost_spider.pipelines.GhostSpiderPipeline': 0
+    'ghost_spider.pipelines.SalonPipeline': 0,
+    'ghost_spider.pipelines.HotelPipeline': 100
 }
 
 ELASTICSEARCH_SERVER = ('192.168.57.101:9200', )
 
 DEFAULT_REQUEST_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en',
+    'Accept-Language': 'ja',
 }
 
 REQUEST_HEADERS = {
-    'en': DEFAULT_REQUEST_HEADERS,
-    'ja': {
+    'ja': DEFAULT_REQUEST_HEADERS,
+    'en': {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'ja'
+      'Accept-Language': 'en'
     },
     'es': {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -58,8 +59,8 @@ def setup_elastic_connection():
 es = setup_elastic_connection()
 
 CSV_OUTPUT_FILE = "output/data.csv"
-LOG_OUTPUT_FILE = "output/error-log.txt"
-LOG_OUTPUT_FILE_INFO = "output/info-log.txt"
+LOG_OUTPUT_FILE_INFO = "output/logs/spider-log.txt"
+LOG_OUTPUT_DIR = "output/logs/"
 
 LOG_ENABLED = True
 LOG_FILE = LOG_OUTPUT_FILE_INFO

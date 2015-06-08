@@ -1,13 +1,10 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/en/latest/topics/items.html
+# -*- coding: utf-8 -*-
 
 from scrapy.item import Item, Field
 
 
-class GhostSpiderItem(Item):
-  
+class HotelItem(Item):
+
   """required fields."""
   # name of place
   page_url = Field()
@@ -22,3 +19,27 @@ class GhostSpiderItem(Item):
   # popularity
   rating = Field()
   popularity = Field()
+
+
+class SalonItem(Item):
+
+  """required fields."""
+  # name of place
+  page_url = Field()
+  name = Field()
+  name_kata = Field()
+  address = Field()
+  routes = Field()
+  phone = Field()
+  working_hours = Field()
+  holydays = Field()
+  shop_url = Field()
+  credit_cards = Field()
+  credit_cards_comment = Field()
+  seats = Field()
+  stylist = Field()
+  parking = Field()
+  cut_price = Field()
+  prefecture = Field()
+  area = Field()
+  page_body = Field()

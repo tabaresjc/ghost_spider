@@ -1,11 +1,11 @@
 #!/bin/bash
 
-index="hotel"
-type="place"
+index="salon"
+type="shop"
 
 #force the creation of normal one (i.e. delete and then create)
-echo "Create index if exist delete it waiting for converter.py..."
-python ../converter.py index_elastic --index=$index --action force
+# echo "Create index if exist delete it waiting for converter.py..."
+# python ../converter.py index_elastic --index=$index --action force
 
 ##create the type and set the mappings
 echo "Create the place type waiting for converter.py..."

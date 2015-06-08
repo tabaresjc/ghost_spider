@@ -1,32 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from scrapy.spider import Spider
 from scrapy.selector import Selector
 from scrapy.http import Request
-from ghost_spider.items import GhostSpiderItem
 from ghost_spider import helper
-import logging
-from scrapy import log as scrapyLog
-from ghost_spider.elastic import LocationHs
-from random import randint
-from ghost_spider.settings import USER_AGENT_LIST, USER_AGENT
+from ghost_spider.items import HotelItem
+from ghost_spider.elastic import LocationEs
+from ghost_spider.util import BaseSpider
 
 
-class TarantulaSpider(Spider):
-  name = "tarantula"
-  # allowed_domains = ["localhost"]
-  # target_base_url = "file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples"
+class HotelSpider(BaseSpider):
+  name = "hotel"
   allowed_domains = ["localhost", "tripadvisor.com", "tripadvisor.jp", "tripadvisor.es", "tripadvisor.fr", "daodao.com"]
   target_base_url = "http://www.tripadvisor.com"
   start_urls = ["http://localhost/AllLocations-g1-c1-Hotels-World.html"]
-  log = None
   total_count = 0L
 
   def __init__(self, name=None, **kwargs):
     self.total_count = 0L
-    self.log.error("*-" * 50)
-    self.log.error('Starting...')
-    super(TarantulaSpider, self).__init__(self.name, **kwargs)
+    super(HotelSpider, self).__init__(self.name, **kwargs)
 
   def parse(self, response):
     """Go through the sitemap and fetch hotels/restaurant/spot pages."""
@@ -36,7 +27,7 @@ class TarantulaSpider(Spider):
     sel = Selector(response)
     links = sel.xpath(helper.SEL_LIST_PLACES).extract()
 
-    #Get the list of countries that needs to be scrapped
+    # Get the list of countries that needs to be scrapped
     if current_level == 1:
       download_list = sel.xpath(helper.SEL_ALLOW_PLACES).extract()
       if download_list:
@@ -68,7 +59,7 @@ class TarantulaSpider(Spider):
             request.meta['area_name'] = area_name
             request.meta['is_more'] = True
             request.meta['area_level'] = current_level
-            scrapyLog.msg('Loading more pages, %s' % area_link, level=scrapyLog.INFO)
+            self.log.msg('Loading more pages, %s' % area_link, level=self.log.INFO)
             yield request
         for link in links:
           area_name = helper.place_sel_name_last.findall(link)[0]
@@ -76,10 +67,10 @@ class TarantulaSpider(Spider):
           # don't scrap the page if it was crawled
           # if the link is not hotel don't fetch it!!
           if not helper.FIND_HOTEL_LINK.findall(area_link):
-            scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
+            self.log.msg(u'ignored %s' % area_link, level=self.log.INFO)
             continue
-          if LocationHs.check_by_url(area_link):
-            scrapyLog.msg(u'ignored %s' % area_link, level=scrapyLog.INFO)
+          if LocationEs.check_by_url(area_link):
+            self.log.msg(u'ignored %s' % area_link, level=self.log.INFO)
             continue
           request = Request(area_link, callback=self.parse_place, errback=self.parse_err)
           request.meta['area_name'] = area_name
@@ -91,20 +82,20 @@ class TarantulaSpider(Spider):
     if response.meta.get('area_name'):
       message = u'%s> %s found(%s) | total(%s)' % ('-----' * current_level, response.meta['area_name'], count, self.total_count)
       print message
-      scrapyLog.msg(message, level=scrapyLog.INFO)
+      self.log.msg(message, level=self.log.INFO)
 
   def parse_err(self, failure):
     """save in the log failure."""
     # save in the log the pages that couldn't be scrapped
     self.log.error(u'%s -- %s' % (failure.getErrorMessage(), failure.getBriefTraceback()))
-    
+
   def parse_place(self, response):
     """Parse hotel/restaurant/spot page."""
     if response.meta.get('area_name') and self.log:
-      scrapyLog.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=scrapyLog.INFO)
+      self.log.msg(u'%s> %s' % ("-----" * response.meta.get('area_level') or 1, response.meta['area_name']), level=self.log.INFO)
     sel = Selector(response)
-    item = GhostSpiderItem()
-    
+    item = HotelItem()
+
     item['page_url'] = response.url
     item['page_breadcrumbs'] = sel.xpath(helper.SEL_BREADCRUMBS).extract()
     item['name'] = sel.xpath(helper.SEL_HOTEL_NAME).extract()
@@ -185,27 +176,3 @@ class TarantulaSpider(Spider):
     countries = [u'Spain', u'Mexico', u'Argentina', u'Chile', u'Ecuador', u'Peru', u'Venezuela', u'Costa Rica', u'Guatemala',
     u'Honduras', u'El Salvador', u'Nicaragua', u'Panama', u'Uruguay', u'Bolivia', u'Colombia', u'Paraguay']
     return breadcrumbs[0] in countries or breadcrumbs[1] in countries or breadcrumbs[2] in countries
-
-  @property
-  def log(self):
-    """return error log handler."""
-    try:
-      return self._log
-    except:
-      from ghost_spider.settings import LOG_OUTPUT_FILE
-      self._log = logging.getLogger(self.name)
-      ch = logging.FileHandler(LOG_OUTPUT_FILE)
-      formatter = logging.Formatter('%(asctime)s - %(message)s')
-      ch.setLevel(logging.ERROR)
-      ch.setFormatter(formatter)
-      self._log.addHandler(ch)
-      return self._log
-
-  @property
-  def user_agent(self):
-    try:
-      nlen = len(USER_AGENT_LIST)
-      n = randint(0, nlen - 1)
-      return USER_AGENT_LIST[n]
-    except:
-      return USER_AGENT

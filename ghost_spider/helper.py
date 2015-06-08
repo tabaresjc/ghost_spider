@@ -1,6 +1,170 @@
 # -*- coding: utf-8 -*-
+
 import urllib
 import re
+
+
+class SalonSelectors(object):
+  """List of selectors for Salons."""
+  LIST_SALONS = '//div[contains(@class, "uWrap")]/div[contains(@class, "LSaj")]/div[contains(@class, "item")]//h3[contains(@class, "ttl")]/a/@href'
+  NEXT_URL = '//link[@rel="next"]/@href'
+  CANONICAL_URL = '//link[@rel="canonical"]/@href'
+
+  NAME = '//div[contains(@class, "title")]//p[contains(@class, "poiTtl")]/a/text()'
+  NAME_KATA = '//div[contains(@class, "title")]/div[contains(@class, "ruby")]/text()'
+  ADDRESS = '//div[contains(@class, "access")]/p[contains(@class, "address")]/text()'
+  ROUTES = '//div[contains(@class, "access")]/p[contains(@class, "route")]/text()'
+
+  SEL_META = '//head/meta'
+  SEL_INFO = '//div[@id="outline"]/ul'
+  SEL_START = '//div[@id="outline"]/ul'
+  SEL_TITLE = '//div[contains(@class, "title")]'
+  SEL_BREADCRUMBS = '//div[@id="sHeader"]/div[contains(@class, "link")]/p[contains(@class, "fl")]/a/text()'
+
+  GENERAL_INFO_TABLE = u'//ul[contains(@class, "detailInfo")]//dt[contains(., "%s")]/following-sibling::dd/text()'
+  GENERAL_INFO_TABLE_URL = u'//ul[contains(@class, "detailInfo")]//dt[contains(., "%s")]/following-sibling::dd/a/text()'
+  GENERAL_INFO_TABLE_CARDS = u'//ul[contains(@class, "detailInfo")]//dt[contains(., "%s")]/following-sibling::dd/span[contains(@class, "logoIcon")]/text()'
+
+  @classmethod
+  def get_prefecture_area(cls, sel):
+    """extract the most relevant info from the page."""
+    data = sel.xpath(cls.SEL_BREADCRUMBS).extract()
+    if not data:
+      return [], u'', u''
+    breadcrumbs = data[1:]
+    prefecture = breadcrumbs[0]
+
+    for word in [u'県', u'府', u'都']:
+      if prefecture[-1] == word:
+        prefecture = prefecture.replace(word, u'')
+        break
+
+    area = u''
+    for place in breadcrumbs[1:]:
+      if u'・' in place:
+        continue
+      area = place
+      break
+
+    if not area and len(breadcrumbs) > 1:
+      area = breadcrumbs[1]
+
+    return prefecture, area
+
+  @classmethod
+  def get_body(cls, sel):
+    """extract the most relevant info from the page."""
+    meta = sel.xpath(cls.SEL_META).extract()
+    breadcrumbs = sel.xpath(cls.SEL_BREADCRUMBS).extract()
+    info = sel.xpath(cls.SEL_INFO).extract()
+    title = sel.xpath(cls.SEL_TITLE).extract()
+    if breadcrumbs:
+      breadcrumbs = breadcrumbs[1:]
+    body = {
+      'meta': u''.join(meta),
+      'breadcrumbs': breadcrumbs,
+      'info': info[0] if len(info) else u'',
+      'title': title[0] if len(title) else u'',
+    }
+    return body
+
+  @classmethod
+  def get_routes(cls, sel):
+    """extract the most relevant info from the page."""
+    raw_routes = sel.xpath(cls.ROUTES).extract()
+    routes = [_.strip().replace(u'（', u'').replace(u'）', u'') for _ in raw_routes]
+    return [route for route in routes if route]
+
+  @classmethod
+  def get_phone(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'電話番号').extract()
+    return u''.join(raw_data).strip()
+
+  @classmethod
+  def get_working_hours(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'営業時間').extract()
+    raw_data = [_.strip() for _ in raw_data]
+    return u'\n'.join(raw_data)
+
+  @classmethod
+  def get_holidays(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'定休日').extract()
+    raw_data = [_.strip() for _ in raw_data]
+    return u'\n'.join(raw_data)
+
+  @classmethod
+  def get_shop_url(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE_URL % u'HP').extract()
+    raw_data = [_.strip() for _ in raw_data]
+    return u'\n'.join(raw_data)
+
+  @classmethod
+  def get_credit_cards(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE_CARDS % u'利用可能カード').extract()
+    raw_data = [_.strip() for _ in raw_data]
+    ccards = []
+    for card in raw_data:
+      if card == u'VISA':
+        ccards.append(u'VISA')
+      elif card == u'MasterCard':
+        ccards.append(u'MASTER')
+      elif card == u'JCB':
+        ccards.append(u'JCB')
+      elif card == u'AmericanExpress' or card == 'American Express':
+        ccards.append(u'AMERICAN EXPRESS')
+      elif card == u'ダイナース' or card == u'DINERS':
+        ccards.append(u'DINERS')
+      elif card == u'Discover':
+        ccards.append(u'DISCOVER')
+    comment = u''
+    if ccards:
+      comment = u'利用可'
+    else:
+      # check if this shop can accept cards
+      features = u''.join(sel.xpath(cls.GENERAL_INFO_TABLE % u'特徴').extract()).strip()
+      if u'カード利用' in features:
+        comment = u'利用可'
+      else:
+        comments = u''.join(sel.xpath(cls.GENERAL_INFO_TABLE % u'クレジットカードコメント').extract()).strip().lower()
+        avalaible = [u'visa', u'mastercard', u'jcb', u'american express', u'ダイナース', u'その他', 'diner', 'discover']
+        for ava in avalaible:
+          if ava in comments:
+            comment = u'利用可'
+            break
+    return comment, ccards
+
+  @classmethod
+  def get_seats(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'総席数').extract()
+    return u''.join(raw_data).strip()
+
+  @classmethod
+  def get_stylist(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'スタイリスト人数').extract()
+    return u''.join(raw_data).strip()
+
+  @classmethod
+  def get_parking(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'駐車場').extract()
+    raw_data = [_.strip() for _ in raw_data]
+    return u'\n'.join(raw_data)
+
+  @classmethod
+  def get_cut_price(cls, sel):
+    raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'カット料金').re(r'\d+')
+    if len(raw_data) > 1:
+      raw_data = sel.xpath(cls.GENERAL_INFO_TABLE % u'カット料金').extract()
+      raw_data = u''.join(raw_data).strip()
+    elif len(raw_data) == 1:
+      raw_data = u''.join(raw_data).strip()
+      try:
+        raw_data = int(raw_data)
+      except:
+        pass
+    else:
+      raw_data = u''
+    return raw_data
+
 
 # selector for country, prefectures and areas
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'
@@ -59,6 +223,7 @@ CLEAN_STATE = re.compile(r'(.*)\s\(', re.DOTALL)
 
 FIND_HOTEL_LINK = re.compile(r'(?i)hotel', re.DOTALL)
 
+
 def get_body(sel):
   """extract the most relevant info from the page."""
   body = []
@@ -82,20 +247,20 @@ def clean_lf(value, sep=u''):
 def rev_telephone(scrambled):
   a2_or_1 = scrambled.split('var')
   a2_or_1 = u''.join([x for x in a2_or_1 if u'E' not in x])
-  #print a2_or_1
+  # print a2_or_1
 
   telephone = {}
   commands = a2_or_1.split('\n')
-  #print commands
+  # print commands
   for command in commands:
-    #print command
+    # print command
     letter = command.split(u'=')
     if len(letter) >= 2:
       if u'+' in letter[0]:
         telephone['%s' % letter[0][0]] += letter[1].strip(u'\'')
       else:
         telephone['%s' % letter[0]] = letter[1].strip(u'\'')
-  #print telephone
+  # print telephone
   try:
     phone_number = telephone['a'] + telephone['c'] + telephone['b']
   except:

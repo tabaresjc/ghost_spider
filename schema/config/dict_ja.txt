@@ -1,0 +1,84 @@
+#
+# This is a sample user dictionary for Kuromoji (JapaneseTokenizer)
+#
+# Add entries to this file in order to override the statistical model in terms
+# of segmentation, readings and part-of-speech tags. Notice that entries do
+# not have weights since they are always used when found. This is by-design
+# in order to maximize ease-of-use.
+#
+# Entries are defined using the following CSV format:
+# <text>,<token 1> ... <token n>,<reading 1> ... <reading n>,<part-of-speech tag>
+#
+# Notice that a single half-width space separates tokens and readings, and
+# that the number tokens and readings must match exactly.
+#
+# Also notice that multiple entries with the same <text> is undefined.
+#
+# Whitespace only lines are ignored. Comments are not allowed on entry lines.
+#
+
+# Custom segmentation for kanji compounds
+日本経済新聞,日本 経済 新聞,ニホン ケイザイ シンブン,カスタム名詞
+関西国際空港,関西 国際 空港,カンサイ コクサイ クウコウ,カスタム名詞
+東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,カスタム名詞
+
+# Custom segmentation for compound katakana
+トートバッグ,トート バッグ,トート バッグ,かずカナ名詞
+ショルダーバッグ,ショルダー バッグ,ショルダー バッグ,かずカナ名詞
+ネイルサロン,ネイル サロン,ネイル サロン,かずカナ名詞
+ヘアサロン,ヘア サロン,ヘア サロン,かずカナ名詞
+ナチュラルヘアー,ナチュラル ヘアー,ナチュラル ヘアー,かずカナ名詞
+
+# Custom reading for former sumo wrestler
+朝青龍,朝青龍,アサショウリュウ,カスタム人名
+
+# Custom reading for hiragana
+ぱ,ぱ,pa,カスタム人名
+ぴ,ぴ,pi,カスタム人名
+ぷ,ぷ,pu,カスタム人名
+ぺ,ぺ,pe,カスタム人名
+ぽ,ぽ,po,カスタム人名
+ば,ば,ba,カスタム人名
+び,び,bi,カスタム人名
+ぶ,ぶ,bu,カスタム人名
+べ,べ,be,カスタム人名
+ぼ,ぼ,bo,カスタム人名
+
+# Custom reading for places
+白金,白金,shirokane,カスタム人名
+二子玉川,二子玉川,futako-tamagawa,カスタム人名
+麻布,麻布,azabu,カスタム人名
+千歳烏山,千歳烏山,chitose-karasuyama,カスタム人名
+祖師ヶ谷大蔵,祖師ヶ谷大蔵,soshigayaookura,カスタム人名
+赤羽,赤羽,akabane,カスタム人名
+両国,両国,ryogoku,カスタム人名
+錦糸町,錦糸町,kinshichou,カスタム人名
+門前仲町,門前仲町,monzennakachou,カスタム人名
+浜松町,浜松町,hamamatsuchou,カスタム人名
+国立,国立,kunitachi,カスタム人名
+大阪,大阪,osaka,カスタム人名
+群馬,群馬,gunma,カスタム人名
+大分,大分,oita,カスタム人名
+十三,十三,juso,カスタム人名
+本町,本町,honmachi,カスタム人名
+四ツ橋,四ツ橋,yotsubashi,カスタム人名
+上本町,上本町,uehonmachi,カスタム人名
+あびこ,あびこ,abiko,カスタム人名
+天満,天満,tenma,カスタム人名
+茨木,茨木,ibaraki,カスタム人名
+柏原,柏原,kashiwara,カスタム人名
+富田林,富田林,tondabayashi,カスタム人名
+北野白梅町,北野白梅町,kitanohakubaicho,カスタム人名
+太泰,太泰,uzumasa,カスタム人名
+京丹後,京丹後,kyotango,カスタム人名
+御着,御着,gochaku,カスタム人名
+三田,三田,sanda,カスタム人名
+大津京,大津京,otsukyo,カスタム人名
+堅田,堅田,katata,カスタム人名
+登美が丘,登美が丘,tomigaoka,カスタム人名
+御所,御所,gose,カスタム人名
+八木,八木,yagi,カスタム人名
+有田市,有田市,arida-shi,カスタム人名
+三川町,三川町,mikawacho,カスタム人名
+紙屋町,紙屋町,kamiyacho,カスタム人名
+桜木町,桜木町,sakuragichou,カスタム人名

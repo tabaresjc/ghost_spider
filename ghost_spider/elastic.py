@@ -50,7 +50,7 @@ class Elastic(object):
     if create:
       my_params = {"op_type": "create"}
 
-    #check json data
+    # check json data
     json.dumps(my_data)
     data_id = my_data.get("id") or ''
     if my_data.get("id"):
@@ -101,14 +101,15 @@ class Elastic(object):
     return: ElasticSearch result.
 
     """
-    import urllib2
-    import server
-
-    result = json.loads(urllib2.urlopen(u'http://%s/%s/_analyze?analyzer=%s' % (server.server.config['ELASTICSEARCH_SERVER'][0], cls.index, analyzer), data.encode('utf-8')).read())
+    from settings import ELASTICSEARCH_SERVER
+    import requests
+    url = u'http://%s/%s/_analyze?analyzer=%s' % (ELASTICSEARCH_SERVER[0], cls.index, analyzer)
+    params = {'analyzer': analyzer, 'text': data}
+    ret = requests.get(url, params=params)
+    result = ret.json()
     value = []
     for token in result["tokens"]:
       value.append(token["token"])
-
     return ' '.join(value)
 
   @classmethod
@@ -225,6 +226,24 @@ class Elastic(object):
     return query
 
   @classmethod
+  def get_by_id(cls, id):
+    """Get an area by his id.
+
+    id: string
+
+    return: ElasticSearch result
+
+    """
+    area = None
+    if not id:
+      return area
+    result = cls.search({"query": {"match_all": {}}, "post_filter": {"term": {"_id": id}}})
+    if result["hits"]["total"] == 1:
+      area = result["hits"]["hits"][0]["_source"]
+      area["id"] = result["hits"]["hits"][0]["_id"]
+    return area
+
+  @classmethod
   def pager(cls, query={"query": {"match_all": {}}}, page=1, size=20, sort=None):
     """Get records on the selected page.
 
@@ -236,13 +255,13 @@ class Elastic(object):
     return: records, total
 
     """
-    #build the query
+    # build the query
     my_query = query
 
     if sort:
       my_query["sort"] = sort
 
-    #pagination
+    # pagination
     my_query["from"] = (page - 1) * size
     my_query["size"] = size
 
@@ -256,7 +275,7 @@ class Elastic(object):
     return result["count"]
 
   @classmethod
-  def bulk_data(cls, data, action="create", type_name=None):
+  def bulk_data(cls, data, data_id=None, action="create", type_name=None):
     """Build a bulk from data.
 
     data: dict
@@ -275,18 +294,25 @@ class Elastic(object):
       }
     }
 
-    #for some data I don't have id
+    # for some data I don't have id
     if data.get("id"):
       bulk_header[action]["_id"] = data["id"]
+
+    if data_id:
+      bulk_header[action]["_id"] = data_id
 
     if action == "update":
       data = {"doc": data}
     return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
 
+  @classmethod
+  def get_hash(cls, value):
+    return hashlib.sha1(value.encode('utf-8')).hexdigest()
 
-class LocationHs(Elastic):
 
-  """List of cities area for Hair Salon."""
+class LocationEs(Elastic):
+
+  """Store scrapped locations."""
 
   index = "hotel"
   type = "place"
@@ -298,26 +324,7 @@ class LocationHs(Elastic):
     data: dict
 
     """
-    return super(LocationHs, cls).save(data, True)
-
-  @classmethod
-  def get_by_id(cls, id):
-    """Get an area by his id.
-
-    id: string
-
-    return: ElasticSearch result
-
-    """
-    area = None
-    if not id:
-      return area
-    result = cls.search({"query": {"match_all": {}}, "post_filter": {"term": {"_id": id}}})
-    if result["hits"]["total"] == 1:
-      area = result["hits"]["hits"][0]["_source"]
-      area["id"] = result["hits"]["hits"][0]["_id"]
-
-    return area
+    return super(LocationEs, cls).save(data, True)
 
   @classmethod
   def get_place_by_name(cls, name, fields=[]):
@@ -378,10 +385,6 @@ class LocationHs(Elastic):
     return result["hits"]["total"] > 0
 
   @classmethod
-  def get_hash(cls, value):
-    return hashlib.sha1(value.encode('utf-8')).hexdigest()
-
-  @classmethod
   def bulk_place(cls, data, action="create"):
     """Build the bulk for a picture.
 
@@ -405,6 +408,71 @@ class LocationHs(Elastic):
     return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
 
 
-class TmpPlace(Elastic):
-  index = "crawler"
-  type = "locations"
+class SalonEs(Elastic):
+
+  """Store scrapped Salons."""
+
+  index = "salon"
+  type = "shops"
+
+  @classmethod
+  def get_data(cls, item):
+    data = {}
+    data['name_low'] = item['name'].lower().strip()
+    data['name'] = item['name']
+    data['name_kata'] = item['name_kata']
+    data['page_url'] = item['page_url'].lower()
+    data['address'] = item['address']
+    data['routes'] = item['routes']
+    data['phone'] = item['phone']
+    data['working_hours'] = item['working_hours']
+    data['holydays'] = item['holydays']
+    data['shop_url'] = item['shop_url']
+    data['credit_cards_comment'] = item['credit_cards_comment']
+    data['credit_cards'] = item['credit_cards']
+    data['seats'] = item['seats']
+    data['stylist'] = item['stylist']
+    data['parking'] = item['parking']
+    data['cut_price'] = item['cut_price']
+
+    data['prefecture'] = item['prefecture']
+    if item['prefecture']:
+      data['prefecture_ascii'] = cls.analyze(item['prefecture'], 'romaji_ascii_normal_analyzer')
+
+    data['area'] = item['area']
+    if item['area']:
+      data['area_ascii'] = cls.analyze(item['area'], 'romaji_ascii_normal_analyzer')
+
+    data['page_body'] = item['page_body']
+    # data['recovered'] = 1
+    data['id'] = SalonEs.get_hash(u'%s%s' % (data['name_low'], item['phone']))
+    return data
+
+  @classmethod
+  def get_place_by_url(cls, url, fields=[]):
+    """Get shop by its original scrapped url."""
+    query = {
+      "query": {
+        "match_all": {}
+      },
+      "post_filter": {
+        "bool": {
+          "should": [
+            {
+              "term": {
+                "page_url": url.lower()
+              }
+            }
+          ]
+        }
+      }
+    }
+    if fields:
+      query["fields"] = fields
+    return cls.search(query)
+
+  @classmethod
+  def check_by_url(cls, url):
+    """Check if place already exists."""
+    result = cls.get_place_by_url(url, fields=['page_url'])
+    return result["hits"]["total"] > 0

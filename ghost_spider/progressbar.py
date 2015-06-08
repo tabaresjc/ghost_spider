@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import sys
 import time
+
 
 class ProgressBar(object):
   """ProgressBar class holds the options of the progress bar.
   The options are:
-    start   State from which start the progress. For example, if start is 
+    start   State from which start the progress. For example, if start is
         5 and the end is 10, the progress of this state is 50%
     end     State in which the progress has terminated.
     width   --

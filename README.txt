@@ -22,3 +22,12 @@
           /scripts/setup.sh
 
 - Python Libraries: Install the required python libraries listed in requeriments.txt
+
+- How to Use
+  [Launch crawler]
+    To launch crawler for salon (ghost_pider/spiders/salon_spider.py), run following command
+    $ scrapy crawl salon
+
+  [Shell]
+    Use this to fetch and analyze web pages, it is very useful when you need to test the xpath selectors
+    $ scrapy shell '/path/to/file/or/url'

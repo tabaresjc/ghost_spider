@@ -1,9 +1,76 @@
 # -*- coding: utf-8 -*-
+
+from scrapy.spider import Spider
+from ghost_spider.settings import USER_AGENT_LIST, USER_AGENT
+from random import randint
+import logging
 import os.path
 import csv, codecs, cStringIO
 import shutil
 import os
-import logging
+
+
+class BaseSpider(Spider):
+  name = "base"
+  allowed_domains = ["localhost"]
+  target_base_url = ""
+  start_urls = []
+
+  @property
+  def log(self):
+    """return log handler."""
+    try:
+      return self._log
+    except:
+      from scrapy import log
+      self._log = log
+      return self._log
+
+  @property
+  def custom_log(self):
+    """return custom log handler."""
+    try:
+      return self._custom_log
+    except:
+      from ghost_spider.settings import LOG_OUTPUT_DIR
+      logging.basicConfig(filename=LOG_OUTPUT_DIR + "spider-log-%s.txt" % self.name,
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s: %(message)s")
+      self._custom_log = logging
+      return self._custom_log
+
+  def log_message(self, message):
+    """return custom log handler."""
+    self.custom_log.info(message)
+
+  def log_error(self, error_message):
+    """return custom log handler."""
+    self.custom_log.error(error_message)
+
+  @property
+  def user_agent(self):
+    try:
+      nlen = len(USER_AGENT_LIST)
+      n = randint(0, nlen - 1)
+      return USER_AGENT_LIST[n]
+    except:
+      return USER_AGENT
+
+  def get_property(self, sel, selector, clean=False):
+    pro = u''
+    try:
+      pro = sel.xpath(selector).extract()
+      if clean:
+        # when data is not in the first element of the array
+        pro = u''.join(pro).strip()
+      else:
+        # use this when you are certain that neccesary info is always on
+        # the first element of the array
+        pro = pro[0] if pro and len(pro) else u''
+        pro = pro.strip()
+    except:
+      pro = u''
+    return pro
 
 
 class CsvWriter:
@@ -110,7 +177,7 @@ class LocationHotelsToCsvFiles(object):
     return self._logger
 
   def dump(self):
-    from ghost_spider.elastic import LocationHs
+    from ghost_spider.elastic import LocationEs
     from ghost_spider import progressbar
     page = 1
     limit = 100
@@ -130,7 +197,7 @@ class LocationHotelsToCsvFiles(object):
     progress = None
     total = 0
     while True:
-      places, total = LocationHs.pager(query=query, page=page, size=limit, sort=sort)
+      places, total = LocationEs.pager(query=query, page=page, size=limit, sort=sort)
       page += 1
       if not places or not len(places):
         break
@@ -201,3 +268,125 @@ class LocationHotelsToCsvFiles(object):
     if place.get('address_area_name'):
       address_list.append(place['address_area_name'])
     return u', '.join(address_list)
+
+
+class SalonToCsvFiles(object):
+  name = None
+  LOG_OUTPUT_FILE_INFO = "upload/info-salon-log.txt"
+  TARGET_DIR_FORMAT = u'output/salons/%s'
+  first_row = [
+    u'サロン名',
+    u'サロン名(カナ)',
+    u'住所',
+    u'最寄駅',
+    u'都道府県',
+    u'エリア',
+    u'電話番号',
+    u'営業時間',
+    u'定休日',
+    u'ホームページ',
+    u'クレジットカード',
+    u'クレジットカード(KIND)',
+    u'座席数',
+    u'スタイリスト数',
+    u'駐車場',
+    u'カット価格',
+    u'Yahoo URL',
+  ]
+
+  def __init__(self, name, **kwargs):
+    """Class initializer.
+
+    name: string
+
+    """
+    self.name = name
+    super(SalonToCsvFiles, self).__init__(**kwargs)
+
+  @property
+  def logger(self):
+    """error log handler."""
+    try:
+      return self._logger
+    except AttributeError:
+      if not os.path.exists('upload'):
+          os.makedirs('upload')
+      self._logger = logging.getLogger(self.name)
+      ch = logging.FileHandler(self.LOG_OUTPUT_FILE_INFO)
+      formatter = logging.Formatter('%(asctime)s - %(message)s')
+      ch.setFormatter(formatter)
+      ch.setLevel(logging.ERROR)
+      self._logger.addHandler(ch)
+      self.total_count = 0L
+    return self._logger
+
+  def dump(self, action=None):
+    from ghost_spider.elastic import SalonEs
+    from ghost_spider import progressbar
+
+    filename = self.get_filename_by_name(self.name, u'salons.csv')
+    query = {"query": {"bool": {"must": [{"term": {"prefecture_ascii": self.name}}]}}}
+
+    if action == 'recover':
+      query["query"]["bool"]["must"].append({"term": {"recovered": "1"}})
+      filename = self.get_filename_by_name(self.name, u'salons_recover.csv')
+
+    if os.path.exists(filename):
+      os.remove(filename)
+
+    progress = None
+    total = 0
+    page = 1
+    limit = 100
+    sort = [{"area.untouched": "asc"}]
+    SalonEs.type = 'shops'
+    print "=" * 100
+    print "dumping data for %s" % self.name
+    while True:
+      salons, total = SalonEs.pager(query=query, page=page, size=limit, sort=sort)
+      page += 1
+      if not salons or not len(salons):
+        break
+      if not progress:
+        print u'Total: %s' % total
+        progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      progress + limit
+      progress.show_progress()
+      for salon in salons:
+        self.save_to_csv(filename, salon)
+    print " "
+
+  def save_to_csv(self, filename, data):
+    """Save this data on csv file by prefecture"""
+    row = []
+
+    row.append(data['name'])
+    row.append(data['name_kata'])
+    row.append(data['address'])
+    row.append(u'\n'.join(data['routes'] or u''))
+
+    row.append(data['prefecture'])
+    row.append(data['area'])
+
+    row.append(data['phone'])
+    row.append(data['working_hours'])
+    row.append(data['holydays'])
+    row.append(data['shop_url'])
+
+    row.append(data['credit_cards_comment'])
+    row.append(u'・'.join(data['credit_cards'] or u''))
+
+    row.append(data['seats'])
+    row.append(data['stylist'])
+    row.append(data['parking'])
+    row.append(unicode(data['cut_price']))
+    row.append(data['page_url'])
+
+    CsvWriter.write_to_csv(filename, row, firs_row=self.first_row)
+
+  def get_filename_by_name(self, name, filename):
+    directory = self.TARGET_DIR_FORMAT % name
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename = u'%s/%s' % (directory, filename)
+    return filename

@@ -22,6 +22,12 @@ def export_hotels_to_csv(name):
   exporter.dump()
 
 
+def export_salons_to_csv(name, action=None):
+  from ghost_spider.util import SalonToCsvFiles
+  exporter = SalonToCsvFiles(name)
+  exporter.dump(action=action)
+
+
 def index_elastic(index, action="create", config_file=None):
   """Create index or force i.e. delete if exist then create it.
 
@@ -33,20 +39,20 @@ def index_elastic(index, action="create", config_file=None):
 
   if not config_file:
     config_file = index
-
-  #create if not exist
+  file_name = 'schema/%s/index_%s.json' % (index, config_file)
+  # create if not exist
   if action == "create":
     try:
       es.request(method="get", myindex=index, mysuffix="_settings")
     except:
-      es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema('schema/index_%s.json' % config_file))
+      es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema(file_name))
   elif action == "force":
-    #force creation i.e delete and then create
+    # force creation i.e delete and then create
     try:
       es.request(method="delete", myindex=index)
     except:
       pass
-    es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema('schema/index_%s.json' % config_file))
+    es.request(method="post", myindex=index, jsonnize=False, mydata=_read_schema(file_name))
 
 
 def type_elastic(index, type, action=None):
@@ -58,59 +64,139 @@ def type_elastic(index, type, action=None):
 
   """
   es = get_es_connection()
-  #delete the if exist
+  # delete the if exist
   if action == "force":
     try:
       es.request(method="delete", myindex=index, mytype=type)
     except:
       pass
-
-  #create if not exist or merge
-  es.request(method="post", myindex=index, mytype=type, mysuffix="_mapping", jsonnize=False, mydata=_read_schema('schema/mapping_%s.json' % type))
+  file_name = 'schema/%s/mapping_%s.json' % (index, type)
+  # create if not exist or merge
+  es.request(method="post", myindex=index, mytype=type, mysuffix="_mapping", jsonnize=False, mydata=_read_schema(file_name))
 
 
 def type_merge(name):
   """Merge type, experimental only use if you are sure that you can get your data back (i.e reindex).
-  
+
   It's to avoid re-indexing when you have a merge conflict.
 
   name: str Name of the model you want to merge
 
   """
-  #import dynamically the
+  # import dynamically the
   mod = __import__("model", fromlist=[name])
-  typeEs = getattr(mod, name)
+  type_es = getattr(mod, name)
   es = get_es_connection()
-  tmp_type = "%s2" % typeEs.type
-  #copy type in type2 force creation
-  es.request(method="post", myindex=typeEs.index, mytype=tmp_type, mysuffix="_mapping", jsonnize=False, mydata=_read_schema('schema/mapping_%s.json' % typeEs.type))
-  _copy_type(typeEs, typeEs.type, tmp_type)
-  type_elastic(typeEs.index, typeEs.type, "force")
-  _copy_type(typeEs, tmp_type, typeEs.type)
-  es.request(method="delete", myindex=typeEs.index, mytype=tmp_type)
+  tmp_type = "%s2" % type_es.type
+  # copy type in type2 force creation
+  file_name = 'schema/%s/mapping_%s.json' % (type_es.index, type_es.type)
+  es.request(method="post", myindex=type_es.index, mytype=tmp_type, mysuffix="_mapping", jsonnize=False, mydata=_read_schema(file_name))
+  _copy_type(type_es, type_es.type, tmp_type)
+  type_elastic(type_es.index, type_es.type, "force")
+  _copy_type(type_es, tmp_type, type_es.type)
+  es.request(method="delete", myindex=type_es.index, mytype=tmp_type)
 
 
-def _copy_type(typeEs, type_from, type_to):
+def replicate_type():
   """Duplicate a type from type_from to type_to."""
-  typeEs.type = type_from
-  #build bulk
+  # build bulk
+  from ghost_spider.elastic import SalonEs
+  from ghost_spider import progressbar
+  size = 100
+  page = 0
+  progress = None
+  total = 0
+  while True:
+    start_from = page * size
+    results = SalonEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
+    if not progress:
+      total = results["hits"]["total"]
+      progress = progressbar.AnimatedProgressBar(end=total, width=100)
+
+    if not results["hits"]["hits"]:
+      break
+
+    page += 1
+    bulk = ""
+    for result in results["hits"]["hits"]:
+      shop = result["_source"]
+      if shop.get('page_url'):
+        shop['page_url'] = shop['page_url'].lower()
+      bulk += SalonEs.bulk_data(result["_source"], type_name="shops")
+    progress + size
+    progress.show_progress()
+    SalonEs.send(bulk)
+  if progress:
+    progress + total
+    progress.show_progress()
+  print "total %s" % total
+
+
+def update_shop():
+  """Duplicate a type from type_from to type_to."""
+  # build bulk
+  from ghost_spider.elastic import SalonEs
+  from ghost_spider import progressbar
+  size = 100
+  page = 0
+  progress = None
+  total = 0
+  query = {"query": {"bool": {"must": [{"terms": {"prefecture.untouched": [u'京']}}]}}, "size": size, "from": 0}
+  # query = {"query": {"match_all": {}}, "size": size, "from": 0}
+  while True:
+    query["from"] = page * size
+    results = SalonEs.search(query)
+    if not progress:
+      total = results["hits"]["total"]
+      print "total %s" % total
+      progress = progressbar.AnimatedProgressBar(end=total, width=100)
+    if not results["hits"]["hits"]:
+      break
+
+    page += 1
+    bulk = ""
+    for result in results["hits"]["hits"]:
+      shop = result["_source"]
+      data_id = result["_id"]
+      shop['prefecture'] = u'京都'
+      shop['prefecture_ascii'] = u'kyoto'
+      bulk += SalonEs.bulk_data(shop, type_name="shops", action="update", data_id=data_id)
+    progress + size
+    progress.show_progress()
+    SalonEs.send(bulk)
+  if progress:
+    progress + total
+    progress.show_progress()
+  print " "
+
+
+def delete_type(index, type):
+  """delete a type from index."""
+  es = get_es_connection()
+  es.request(method="delete", myindex=index, mytype=type)
+
+
+def _copy_type(type_es, type_from, type_to):
+  """Duplicate a type from type_from to type_to."""
+  type_es.type = type_from
+  # build bulk
   size = 100
   page = 0
   while True:
     start_from = page * size
-    results = typeEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
+    results = type_es.search({"query": {"match_all": {}}, "size": size, "from": start_from})
     if not results["hits"]["hits"]:
       break
     page += 1
     bulk = ""
     for result in results["hits"]["hits"]:
-      bulk += typeEs.bulk_data(result["_source"], type_name=type_to)
-    typeEs.send(bulk)
+      bulk += type_es.bulk_data(result["_source"], type_name=type_to)
+    type_es.send(bulk)
 
 
 def elastic_backup(name=None):
   """Launch a snapshot with generated name directory if not provided.
-  
+
   name: str
 
   """
@@ -190,7 +276,7 @@ def remove_restaurants_from_hotel():
       break
     if not progress:
       progress = progressbar.AnimatedProgressBar(end=total, width=50)
-    
+
     progress + limit
     progress.show_progress()
     places, tot = LocationHs.pager(query, page=page, size=limit)
@@ -222,16 +308,20 @@ def main():
 
   options = dict([(k, v) for k, v in options.__dict__.iteritems() if not k.startswith('_') and v is not None])
 
-  COMMANDS = {
+  commands = {
     'index_elastic': index_elastic,
     'type_elastic': type_elastic,
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
     'export_hotels_to_csv': export_hotels_to_csv,
+    'export_salons_to_csv': export_salons_to_csv,
     'remove_hotels': remove_hotels,
-    'remove_restaurants_from_hotel': remove_restaurants_from_hotel
+    'remove_restaurants_from_hotel': remove_restaurants_from_hotel,
+    'replicate_type': replicate_type,
+    'delete_type': delete_type,
+    'update_shop': update_shop
   }
-  command = COMMANDS[args[0]]
+  command = commands[args[0]]
 
   try:
     command(**options)

@@ -1,16 +1,17 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
+# -*- coding: utf-8 -*-
+
 from ghost_spider import helper
-from elastic import LocationHs
+from ghost_spider.items import SalonItem, HotelItem
+from elastic import LocationEs, SalonEs
 
 
-class GhostSpiderPipeline(object):
+class HotelPipeline(object):
 
-  """Process & format data after being scrapped from page."""
+  """Process & format data after being scrapped from hotel page."""
 
   def process_item(self, item, spider):
+    if not isinstance(item, HotelItem):
+      return item
     for k, v in item.iteritems():
       if k == 'phone':
         if v and len(v):
@@ -25,7 +26,7 @@ class GhostSpiderPipeline(object):
         item[k] = self.clean_place(v)
       else:
         item[k] = helper.clean_lf(v)
-    LocationHs.save(self.save_item_to_es(item))
+    LocationEs.save(self.save_item_to_es(item))
     return item
 
   def clean_place(self, places):
@@ -59,5 +60,18 @@ class GhostSpiderPipeline(object):
     item_es['area5'] = item['page_breadcrumbs'][4].strip() if len(item['page_breadcrumbs']) > 4 else u''
     item_es['region'] = item['region'].strip()
     item_es['place'] = item['place']
-    item_es['id'] = LocationHs.get_hash(item_es['page_url'])
+    item_es['id'] = LocationEs.get_hash(item_es['page_url'])
     return item_es
+
+
+class SalonPipeline(object):
+
+  """Process & format data after being scrapped from salon page."""
+
+  def process_item(self, item, spider):
+    if not isinstance(item, SalonItem):
+      return item
+    data = SalonEs.get_data(item)
+    if data:
+      SalonEs.save(data)
+    return item
