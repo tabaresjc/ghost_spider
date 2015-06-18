@@ -43,3 +43,26 @@ class SalonItem(Item):
   prefecture = Field()
   area = Field()
   page_body = Field()
+
+
+class LocationHotelItem(Item):
+
+  """required fields."""
+  # name of place
+  page_url = Field()
+  name = Field()
+  name_kata = Field()
+  address = Field()
+  routes = Field()
+  phone = Field()
+  shop_url = Field()
+  credit_cards = Field()
+  credit_cards_comment = Field()
+  prefecture = Field()
+  area = Field()
+  genre = Field()
+  checkin = Field()
+  checkout = Field()
+  kind = Field()
+  votes = Field()
+  page_body = Field()

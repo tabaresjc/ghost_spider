@@ -7,6 +7,7 @@ import re
 class SalonSelectors(object):
   """List of selectors for Salons."""
   LIST_SALONS = '//div[contains(@class, "uWrap")]/div[contains(@class, "LSaj")]/div[contains(@class, "item")]//h3[contains(@class, "ttl")]/a/@href'
+  LIST_TOTAL = '//div[@id="Sf"]/div/p/span[contains(@class, "bo")]/text()'
   NEXT_URL = '//link[@rel="next"]/@href'
   CANONICAL_URL = '//link[@rel="canonical"]/@href'
 
@@ -131,6 +132,18 @@ class SalonSelectors(object):
           if ava in comments:
             comment = u'利用可'
             break
+        if u'visa' in comments:
+          ccards.append(u'VISA')
+        if u'master' in comments or u'mastercard' in comments or u'master card' in comments:
+          ccards.append(u'MASTER')
+        if u'jcb' in comments:
+          ccards.append(u'JCB')
+        if u'american express' in comments or u'americanexpress' in comments:
+          ccards.append(u'AMERICAN EXPRESS')
+        if u'ダイナース' in comments or u'diners' in comments:
+          ccards.append(u'DINERS')
+        if u'discover' in comments:
+          ccards.append(u'DISCOVER')
     return comment, ccards
 
   @classmethod
@@ -165,6 +178,125 @@ class SalonSelectors(object):
       raw_data = u''
     return raw_data
 
+  @classmethod
+  def get_list_total(cls, sel):
+    total = 0
+    raw_data = sel.xpath(cls.LIST_TOTAL).extract()
+    if len(raw_data) and raw_data[0]:
+      str_number = raw_data[0].replace(',', '')
+      try:
+        total = int(str_number)
+      except:
+        total = 0
+    return total
+
+  @classmethod
+  def is_first_page(cls, sel):
+    raw_data = sel.xpath(cls.CANONICAL_URL).re(r'&b=\d+')
+    if len(raw_data):
+      return False
+    return True
+
+
+class LocationHotelSelectors(SalonSelectors):
+  LIST_HOTELS = '//div[contains(@class, "uWrap")]/div[contains(@class, "LSaj")]/div[contains(@class, "item")]//h3[contains(@class, "ttl")]/a/@href'
+  LIST_TOTAL = '//div[@id="Sf"]/div/p/span[contains(@class, "bo")]/text()'
+  NEXT_URL = '//link[@rel="next"]/@href'
+  CANONICAL_URL = '//link[@rel="canonical"]/@href'
+
+  NAME = '//div[contains(@class, "title")]//p[contains(@class, "poiTtl")]/a/text()'
+  NAME_KATA = '//div[contains(@class, "title")]/div[contains(@class, "ruby")]/text()'
+  ADDRESS = '//div[contains(@class, "access")]/p[contains(@class, "address")]/text()'
+  ROUTES = '//div[contains(@class, "access")]/p[contains(@class, "route")]/text()'
+
+  SEL_META = '//head/meta'
+  SEL_INFO = '//div[@id="outline"]/ul'
+  SEL_START = '//div[@id="outline"]/ul'
+  SEL_TITLE = '//div[contains(@class, "title")]'
+  SEL_BREADCRUMBS = '//div[@id="sHeader"]/div[contains(@class, "link")]/p[contains(@class, "fl")]/a/text()'
+  SEL_GENRE = '//div[contains(@class, "poiHeader")]/p[contains(@class, "genre")]/a/text()'
+  SEL_VOTES = '//span[@itemprop="votes"]/a/text()'
+  HOTEL_KINDS = [u'ホテル', u'旅館', u'民宿', u'ビジネスホテル', u'ペンション', u'保養所', u'公共の宿', u'貸別荘', u'ラブホテル', u'宿泊施設（その他）']
+  REPLACE_HOTEL = {
+    u'ホテル': u'ホテル',
+    u'旅館': u'旅館',
+    u'民宿': u'ペンション・民宿',
+    u'ビジネスホテル': u'ビジネスホテル・イン',
+    u'ペンション': u'ペンション・民宿',
+    u'貸別荘': u'ロッジ・貸別荘',
+    u'保養所': u'保養所',
+    u'公共の宿': u'公共の宿',
+    u'ラブホテル': u'ラブホテル',
+    u'宿泊施設（その他）': u'宿泊施設（その他）'
+  }
+
+  @classmethod
+  def get_prefecture_area(cls, sel):
+    """extract the most relevant info from the page."""
+    data = sel.xpath(cls.SEL_BREADCRUMBS).extract()
+    if not data:
+      return [], u'', u''
+    breadcrumbs = data[1:]
+    prefecture = breadcrumbs[0]
+
+    for word in [u'県', u'府', u'都']:
+      if prefecture[-1] == word:
+        prefecture = prefecture.replace(word, u'')
+        break
+
+    data = sel.xpath(cls.SEL_GENRE).extract()
+    area = data[0] if data and len(data) else u''
+    if not area and len(breadcrumbs) > 1:
+      area = breadcrumbs[1]
+    return prefecture, area
+
+  @classmethod
+  def get_genre(cls, sel):
+    raw_data = sel.xpath(cls.SEL_GENRE).extract()
+    # first one is the area, so is not included in the genre list
+    return raw_data[1:]
+
+  @classmethod
+  def get_working_time(cls, sel):
+    checkin = u''.join(sel.xpath(cls.GENERAL_INFO_TABLE % u'チェックイン開始時刻').extract())
+    checkout = u''.join(sel.xpath(cls.GENERAL_INFO_TABLE % u'チェックアウト時刻').extract())
+    return checkin.strip(), checkout.strip()
+
+  @classmethod
+  def get_hotel_type(cls, sel):
+    data = (u''.join(sel.xpath(cls.GENERAL_INFO_TABLE % u'宿のタイプ').extract())).strip()
+    if data not in cls.HOTEL_KINDS:
+      data = u'ホテル'
+    data = cls.REPLACE_HOTEL.get(data) or u'ホテル'
+    return data
+
+  @classmethod
+  def get_body(cls, sel):
+    """extract the most relevant info from the page."""
+    meta = sel.xpath(cls.SEL_META).extract()
+    breadcrumbs = sel.xpath(cls.SEL_BREADCRUMBS).extract()
+    info = sel.xpath(cls.SEL_INFO).extract()
+    title = sel.xpath(cls.SEL_TITLE).extract()
+    if breadcrumbs:
+      breadcrumbs = breadcrumbs[1:]
+    body = {
+      'meta': u''.join(meta),
+      'breadcrumbs': breadcrumbs,
+      'info': info[0] if len(info) else u'',
+      'title': title[0] if len(title) else u'',
+    }
+    return body
+
+  @classmethod
+  def get_votes(cls, sel):
+    """extract number of reviews posted for this hotel."""
+    vote_raw = sel.xpath(cls.SEL_VOTES).re(r'\d+')
+    vote = 0
+    try:
+      vote = int(vote_raw[0].replace(',', ''))
+    except:
+      pass
+    return vote
 
 # selector for country, prefectures and areas
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'

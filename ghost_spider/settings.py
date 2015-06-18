@@ -14,14 +14,14 @@ SPIDER_MODULES = ['ghost_spider.spiders']
 NEWSPIDER_MODULE = 'ghost_spider.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (X11; CrOS i686 4319.74.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36'
 DOWNLOAD_DELAY = 2
 COOKIES_ENABLED = False
 
 
 ITEM_PIPELINES = {
-    'ghost_spider.pipelines.SalonPipeline': 0,
-    'ghost_spider.pipelines.HotelPipeline': 100
+    'ghost_spider.pipelines.LocationHotelPipeline': 0,
+    'ghost_spider.pipelines.SalonPipeline': 100,
 }
 
 ELASTICSEARCH_SERVER = ('192.168.57.101:9200', )

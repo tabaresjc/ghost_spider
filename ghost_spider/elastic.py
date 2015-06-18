@@ -310,64 +310,30 @@ class Elastic(object):
     return hashlib.sha1(value.encode('utf-8')).hexdigest()
 
 
-class LocationEs(Elastic):
+class CommonElastic(object):
 
-  """Store scrapped locations."""
-
-  index = "hotel"
-  type = "place"
+  """Define common functions to be used in all children classes."""
 
   @classmethod
-  def save(cls, data):
-    """Save the area.
-
-    data: dict
-
-    """
-    return super(LocationEs, cls).save(data, True)
-
-  @classmethod
-  def get_place_by_name(cls, name, fields=[]):
+  def get_place_by_name(cls, name, fields=None):
     """Get place by its name."""
-    query = {
-      "query": {
-        "match_all": {}
-      },
-      "post_filter": {
-        "bool": {
-          "should": [
-            {
-              "term": {
-                "name_low": name.lower()
-              }
-            }
-          ]
-        }
-      }
-    }
+    query = {"query": {"bool": {"must": [{"term": {"name_low": name.lower()}}]}}}
     if fields:
       query["fields"] = fields
     return cls.search(query)
 
   @classmethod
-  def get_place_by_url(cls, url, fields=[]):
-    """Get place by its name."""
-    query = {
-      "query": {
-        "match_all": {}
-      },
-      "post_filter": {
-        "bool": {
-          "should": [
-            {
-              "term": {
-                "page_url": url.lower()
-              }
-            }
-          ]
-        }
-      }
-    }
+  def get_place_by_url(cls, url, fields=None):
+    """Get place by its url."""
+    query = {"query": {"bool": {"must": [{"term": {"page_url": url.strip().lower()}}]}}}
+    if fields:
+      query["fields"] = fields
+    return cls.search(query)
+
+  @classmethod
+  def get_place_by_ids(cls, ids, fields=None):
+    """Get place by its url."""
+    query = {"query": {"ids": {"values": ids}}}
     if fields:
       query["fields"] = fields
     return cls.search(query)
@@ -383,6 +349,23 @@ class LocationEs(Elastic):
     """Check if place already exists."""
     result = cls.get_place_by_url(url, fields=['page_url'])
     return result["hits"]["total"] > 0
+
+
+class LocationEs(Elastic, CommonElastic):
+
+  """Store scrapped hotels from TripAdvisor."""
+
+  index = "hotel"
+  type = "place"
+
+  @classmethod
+  def save(cls, data):
+    """Save the area.
+
+    data: dict
+
+    """
+    return super(LocationEs, cls).save(data, True)
 
   @classmethod
   def bulk_place(cls, data, action="create"):
@@ -408,7 +391,7 @@ class LocationEs(Elastic):
     return json.dumps(bulk_header) + '\n' + json.dumps(data) + '\n'
 
 
-class SalonEs(Elastic):
+class SalonEs(Elastic, CommonElastic):
 
   """Store scrapped Salons."""
 
@@ -448,31 +431,49 @@ class SalonEs(Elastic):
     data['id'] = SalonEs.get_hash(u'%s%s' % (data['name_low'], item['phone']))
     return data
 
-  @classmethod
-  def get_place_by_url(cls, url, fields=[]):
-    """Get shop by its original scrapped url."""
-    query = {
-      "query": {
-        "match_all": {}
-      },
-      "post_filter": {
-        "bool": {
-          "should": [
-            {
-              "term": {
-                "page_url": url.lower()
-              }
-            }
-          ]
-        }
-      }
-    }
-    if fields:
-      query["fields"] = fields
-    return cls.search(query)
+
+class LocationHotelEs(Elastic, CommonElastic):
+
+  """Store scrapped hotels from Yahoo LOCO."""
+
+  index = "location"
+  type = "hotels"
 
   @classmethod
-  def check_by_url(cls, url):
-    """Check if place already exists."""
-    result = cls.get_place_by_url(url, fields=['page_url'])
-    return result["hits"]["total"] > 0
+  def get_data(cls, item):
+    data = {}
+    data['name_low'] = item['name'].lower().strip()
+    data['name'] = item['name']
+    data['name_kata'] = item['name_kata']
+    data['page_url'] = item['page_url'].lower()
+    data['address'] = item['address']
+    data['routes'] = item['routes']
+    data['phone'] = item['phone']
+    data['shop_url'] = item['shop_url']
+    data['credit_cards'] = item['credit_cards']
+    data['credit_cards_comment'] = item['credit_cards_comment']
+
+    data['prefecture'] = item['prefecture']
+    if item['prefecture']:
+      data['prefecture_ascii'] = cls.analyze(item['prefecture'], 'romaji_ascii_normal_analyzer')
+
+    data['area'] = item['area']
+    if item['area']:
+      data['area_ascii'] = cls.analyze(item['area'], 'romaji_ascii_normal_analyzer')
+
+    data['genre'] = item['genre']
+    data['checkin'] = item['checkin']
+    data['checkout'] = item['checkout']
+    data['votes'] = item['votes']
+    data['page_body'] = item['page_body']
+    data['kind'] = item['kind']
+    data['id'] = SalonEs.get_hash(u'%s%s' % (data['name_low'], item['phone']))
+    return data
+
+
+class LocationTravelHotelEs(Elastic, CommonElastic):
+
+  """Store hotels from Latte."""
+
+  index = "location"
+  type = "travel_hotels"

@@ -1,10 +1,6 @@
 {
-  "shop": {
+  "hotels": {
     "properties": {
-      "name_low": {
-        "type": "string",
-        "analyzer": "lower_analyzer"
-      },
       "name": {
         "type": "string",
         "fields": {
@@ -29,6 +25,10 @@
             "analyzer": "katakana_analyzer"
           }
         }
+      },
+      "name_low": {
+        "type": "string",
+        "analyzer": "lower_analyzer"
       },
       "name_kata": {
         "type": "string",
@@ -71,14 +71,6 @@
         "type": "string",
         "index": "not_analyzed"
       },
-      "working_hours": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "holydays": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
       "shop_url": {
         "type": "string",
         "index": "not_analyzed"
@@ -87,27 +79,7 @@
         "type": "string",
         "index": "not_analyzed"
       },
-      "credit_cards": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
       "credit_cards_comment": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "seats": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "stylist": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "parking": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "cut_price": {
         "type": "string",
         "index": "not_analyzed"
       },
@@ -175,6 +147,36 @@
           }
         }
       },
+      "genre":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "checkin":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "checkout":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "votes" : {
+        "type" : "long"
+      },
       "page_body": {
         "properties": {
           "meta": {
@@ -195,7 +197,16 @@
           }
         }
       },
-      "recovered" : {
+      "parent_url_key":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "version" : {
         "type" : "long"
       }
     }

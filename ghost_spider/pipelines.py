@@ -1,13 +1,39 @@
 # -*- coding: utf-8 -*-
 
 from ghost_spider import helper
-from ghost_spider.items import SalonItem, HotelItem
-from elastic import LocationEs, SalonEs
+from ghost_spider.items import SalonItem, HotelItem, LocationHotelItem
+from elastic import LocationEs, SalonEs, LocationHotelEs
+
+
+class SalonPipeline(object):
+
+  """Process & format data after being scrapped from salon page."""
+
+  def process_item(self, item, spider):
+    if not isinstance(item, SalonItem):
+      return item
+    data = SalonEs.get_data(item)
+    if data:
+      SalonEs.save(data)
+    return item
+
+
+class LocationHotelPipeline(object):
+
+  """Process & format data after being scrapped from hotel page."""
+
+  def process_item(self, item, spider):
+    if not isinstance(item, LocationHotelItem):
+      return item
+    data = LocationHotelEs.get_data(item)
+    if data:
+      LocationHotelEs.save(data)
+    return item
 
 
 class HotelPipeline(object):
 
-  """Process & format data after being scrapped from hotel page."""
+  """Process & format data after being scrapped from hotel page (Old)."""
 
   def process_item(self, item, spider):
     if not isinstance(item, HotelItem):
@@ -62,16 +88,3 @@ class HotelPipeline(object):
     item_es['place'] = item['place']
     item_es['id'] = LocationEs.get_hash(item_es['page_url'])
     return item_es
-
-
-class SalonPipeline(object):
-
-  """Process & format data after being scrapped from salon page."""
-
-  def process_item(self, item, spider):
-    if not isinstance(item, SalonItem):
-      return item
-    data = SalonEs.get_data(item)
-    if data:
-      SalonEs.save(data)
-    return item

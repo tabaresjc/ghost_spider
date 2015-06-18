@@ -28,6 +28,44 @@ def export_salons_to_csv(name, action=None):
   exporter.dump(action=action)
 
 
+def export_multiple_hotels(name, action=None):
+  names = name.split(',')
+  for n in names:
+    export_location_hotels(n, action=action)
+
+
+def export_location_hotels(name, action=None):
+  from ghost_spider.util import LocationHotelToCsvFiles
+  exporter = LocationHotelToCsvFiles(name)
+  exporter.dump(action=action)
+
+
+def import_hotels(name=None):
+  """Add hair salons in db and then index in elastic."""
+  import os
+  from ghost_spider.util import TravelHotelCsv
+
+  f = open(name, 'rb')
+  try:
+    TravelHotelCsv.import_file(f)
+  finally:
+    if f:
+      f.close()
+
+
+def update_location_hotels(name=None):
+  """Add hair salons in db and then index in elastic."""
+  import os
+  from ghost_spider.util import LocationHotelToCsvFiles
+
+  f = open(name, 'rb')
+  try:
+    LocationHotelToCsvFiles.import_file(f)
+  finally:
+    if f:
+      f.close()
+
+
 def index_elastic(index, action="create", config_file=None):
   """Create index or force i.e. delete if exist then create it.
 
@@ -100,7 +138,7 @@ def type_merge(name):
 def replicate_type():
   """Duplicate a type from type_from to type_to."""
   # build bulk
-  from ghost_spider.elastic import SalonEs
+  from ghost_spider.elastic import LocationHotelEs
   from ghost_spider import progressbar
   size = 100
   page = 0
@@ -108,7 +146,7 @@ def replicate_type():
   total = 0
   while True:
     start_from = page * size
-    results = SalonEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
+    results = LocationHotelEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
     if not progress:
       total = results["hits"]["total"]
       progress = progressbar.AnimatedProgressBar(end=total, width=100)
@@ -119,13 +157,11 @@ def replicate_type():
     page += 1
     bulk = ""
     for result in results["hits"]["hits"]:
-      shop = result["_source"]
-      if shop.get('page_url'):
-        shop['page_url'] = shop['page_url'].lower()
-      bulk += SalonEs.bulk_data(result["_source"], type_name="shops")
+      data = result["_source"]
+      bulk += LocationHotelEs.bulk_data(data, type_name="hotels_back")
     progress + size
     progress.show_progress()
-    SalonEs.send(bulk)
+    LocationHotelEs.send(bulk)
   if progress:
     progress + total
     progress.show_progress()
@@ -319,7 +355,11 @@ def main():
     'remove_restaurants_from_hotel': remove_restaurants_from_hotel,
     'replicate_type': replicate_type,
     'delete_type': delete_type,
-    'update_shop': update_shop
+    'update_shop': update_shop,
+    'import_hotels': import_hotels,
+    'export_location_hotels': export_location_hotels,
+    'export_multiple_hotels': export_multiple_hotels,
+    'update_location_hotels': update_location_hotels
   }
   command = commands[args[0]]
 

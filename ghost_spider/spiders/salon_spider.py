@@ -14,14 +14,16 @@ class SalonSpider(BaseSpider):
   name = "salon"
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
-  start_urls = (URLS['mie'] + URLS['okinawa'])
+  start_urls = URLS['tokyo']
   # start_urls = ["file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/salons/list2.html"]
   count = 0
+  count_skip = 0
 
   def __init__(self, name=None, **kwargs):
     self.log_message('*-' * 50)
     self.log_message('Starting...')
     self.count = 0
+    self.count_skip = 0
     super(SalonSpider, self).__init__(self.name, **kwargs)
 
   def parse(self, response):
@@ -29,11 +31,18 @@ class SalonSpider(BaseSpider):
     links = sel.xpath(SalonSelectors.LIST_SALONS).extract()
     next_page = self.get_property(sel, SalonSelectors.NEXT_URL)
     print u'links: %s, %s' % (len(links), response.url)
+    if SalonSelectors.is_first_page(sel):
+      total = SalonSelectors.get_list_total(sel)
+      if total > 999:
+        # yahoo search can not paginate beyond 1000 items
+        # so need to run crawler for smaller areas
+        self.log_message(u'Pagination overflow: %s' % response.url)
     if links:
       for link in links:
         canonical = link.split('?')[0]
         if SalonEs.check_by_url(canonical):
-          print u'skipped: %s' % link
+          self.count_skip += 1
+          print u'%s: skipped: %s' % (self.count_skip, link)
           continue
         request = Request(link, callback=self.parse_salon, errback=self.parse_err)
         request.meta['page_kind'] = 'salon'
