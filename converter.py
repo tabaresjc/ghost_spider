@@ -3,64 +3,34 @@ import sys
 from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 
-def remove_hotels():
-  from ghost_spider.elastic import LocationHs
-  hotels = [line.strip() for line in open("output/erase_hotels.txt", "r")]
-  count = 0
-  print ".*" * 50
-  for name in hotels:
-    result = LocationHs.get_place_by_name(name, fields=['name'])
-    if result["hits"]["total"] == 1:
-      count += 1
-      print u'%s' % name
-      LocationHs.delete({'id': result["hits"]["hits"][0]["_id"]})
+def export_csv_file(kind, name, action=None):
+  from ghost_spider.util import LocationCsv
+  if kind == 'hotel':
+    LocationCsv.dump_hotel(name, action=action)
+  elif kind == 'restaurant':
+    LocationCsv.dump_restaurant(name, action=action)
+  else:
+    NotImplementedError()
 
 
-def export_hotels_to_csv(name):
-  from ghost_spider.util import LocationHotelsToCsvFiles
-  exporter = LocationHotelsToCsvFiles(name)
-  exporter.dump()
+def import_csv_file(filename, kind):
+  """Store data from csv files.
 
+  filename: string
+  kind: string (hotel/restaurant)
 
-def export_salons_to_csv(name, action=None):
-  from ghost_spider.util import SalonToCsvFiles
-  exporter = SalonToCsvFiles(name)
-  exporter.dump(action=action)
-
-
-def export_multiple_hotels(name, action=None):
-  names = name.split(',')
-  for n in names:
-    export_location_hotels(n, action=action)
-
-
-def export_location_hotels(name, action=None):
-  from ghost_spider.util import LocationHotelToCsvFiles
-  exporter = LocationHotelToCsvFiles(name)
-  exporter.dump(action=action)
-
-
-def import_hotels(name=None):
-  """Add hair salons in db and then index in elastic."""
-  import os
-  from ghost_spider.util import TravelHotelCsv
-
-  f = open(name, 'rb')
-  try:
-    TravelHotelCsv.import_file(f)
-  finally:
-    if f:
-      f.close()
+  """
+  from ghost_spider.util import CsvImporter
+  CsvImporter.import_file(filename, kind)
 
 
 def update_location_hotels(name=None):
-  """Add hair salons in db and then index in elastic."""
   import os
-  from ghost_spider.util import LocationHotelToCsvFiles
+  from ghost_spider.util import LocationCsv
 
   f = open(name, 'rb')
   try:
-    LocationHotelToCsvFiles.import_file(f)
+    LocationCsv.import_file(f)
   finally:
     if f:
       f.close()
@@ -138,7 +108,7 @@ def type_merge(name):
 def replicate_type():
   """Duplicate a type from type_from to type_to."""
   # build bulk
-  from ghost_spider.elastic import LocationHotelEs
+  from ghost_spider.elastic import LocationRestaurantEs
   from ghost_spider import progressbar
   size = 100
   page = 0
@@ -146,7 +116,7 @@ def replicate_type():
   total = 0
   while True:
     start_from = page * size
-    results = LocationHotelEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
+    results = LocationRestaurantEs.search({"query": {"match_all": {}}, "size": size, "from": start_from})
     if not progress:
       total = results["hits"]["total"]
       progress = progressbar.AnimatedProgressBar(end=total, width=100)
@@ -158,30 +128,32 @@ def replicate_type():
     bulk = ""
     for result in results["hits"]["hits"]:
       data = result["_source"]
-      bulk += LocationHotelEs.bulk_data(data, type_name="hotels_back")
+      bulk += LocationRestaurantEs.bulk_data(data, type_name="restaurants_back")
     progress + size
     progress.show_progress()
-    LocationHotelEs.send(bulk)
+    LocationRestaurantEs.send(bulk)
   if progress:
     progress + total
     progress.show_progress()
   print "total %s" % total
 
 
-def update_shop():
+def update_location():
   """Duplicate a type from type_from to type_to."""
   # build bulk
-  from ghost_spider.elastic import SalonEs
+  from ghost_spider.elastic import LocationRestaurantEs
+  from ghost_spider.helper import LocationHotelSelectors
   from ghost_spider import progressbar
+  import re
   size = 100
   page = 0
   progress = None
   total = 0
-  query = {"query": {"bool": {"must": [{"terms": {"prefecture.untouched": [u'京']}}]}}, "size": size, "from": 0}
-  # query = {"query": {"match_all": {}}, "size": size, "from": 0}
+  query = {"query": {"match_all": {}}, "size": size, "from": 0}
+  query["sort"] = [{"name.untouched": "asc"}]
   while True:
     query["from"] = page * size
-    results = SalonEs.search(query)
+    results = LocationRestaurantEs.search(query)
     if not progress:
       total = results["hits"]["total"]
       print "total %s" % total
@@ -192,14 +164,37 @@ def update_shop():
     page += 1
     bulk = ""
     for result in results["hits"]["hits"]:
-      shop = result["_source"]
+      location = result["_source"]
       data_id = result["_id"]
-      shop['prefecture'] = u'京都'
-      shop['prefecture_ascii'] = u'kyoto'
-      bulk += SalonEs.bulk_data(shop, type_name="shops", action="update", data_id=data_id)
+      genre = []
+      area_found = False
+      for a in location["page_body"]["genre"]:
+        result = re.findall(r'genrecd=\d+', a)
+        if u'genrecd=01' in result:
+          if not area_found:
+            text = re.findall(r'>(.*)</', a)
+            location['area'] = text[0]
+            if location['area']:
+              location['area_ascii'] = LocationRestaurantEs.analyze(location['area'], 'romaji_ascii_normal_analyzer')
+            area_found = True
+        else:
+          text = re.findall(r'>(.*)</', a)
+          if text and text[0]:
+            genre.append(text[0])
+      if not area_found and len(location["page_body"]["breadcrumbs"]) > 1:
+        location['area'] = location["page_body"]["breadcrumbs"][-1]
+        if location['area']:
+          location['area_ascii'] = LocationRestaurantEs.analyze(location['area'], 'romaji_ascii_normal_analyzer')
+      elif not area_found:
+        location['area'] = ''
+        location['area_ascii'] = ''
+      kind = LocationHotelSelectors.convert_latte_kind(genre)
+      location['genre'] = genre
+      location['kind'] = kind
+      bulk += LocationRestaurantEs.bulk_data(location, action="update", data_id=data_id)
     progress + size
     progress.show_progress()
-    SalonEs.send(bulk)
+    LocationRestaurantEs.send(bulk)
   if progress:
     progress + total
     progress.show_progress()
@@ -282,8 +277,8 @@ def _read_schema(filename):
 
   """
   import os
-  PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-  f = open(os.path.join(PROJECT_ROOT, filename), 'rb')
+  project_root = os.path.abspath(os.path.dirname(__file__))
+  f = open(os.path.join(project_root, filename), 'rb')
   try:
     return f.read()
   finally:
@@ -291,45 +286,13 @@ def _read_schema(filename):
       f.close()
 
 
-def remove_restaurants_from_hotel():
-  from ghost_spider.elastic import LocationHs
-  from ghost_spider import progressbar
-  query = {
-    "query": {
-      "bool": {
-        "must": [{"wildcard": {"place.page_url": "*restaurant*"}}],
-        "must_not": [{"wildcard": {"place.page_url": "*hotel*"}}]
-      }
-    }
-  }
-  progress = None
-  limit = 100
-  page = 1
-  places, total = LocationHs.pager(query, page=page, size=limit)
-  print "Finding restaurants withing hotel"
-  while True:
-    if total <= 0:
-      break
-    if not progress:
-      progress = progressbar.AnimatedProgressBar(end=total, width=50)
-
-    progress + limit
-    progress.show_progress()
-    places, tot = LocationHs.pager(query, page=page, size=limit)
-    if not places or not len(places):
-      break
-    for p in places:
-      LocationHs.delete({'id': p['id']})
-    total -= limit
-
-  print "Finito!!!"
-
-
 def main():
   from optparse import OptionParser
   parser = OptionParser()
   parser.add_option('--id', type='int')
   parser.add_option('--name', type='str')
+  parser.add_option('--filename', type='str')
+  parser.add_option('--kind', type='str')
   parser.add_option('--file', type='str')
   parser.add_option('--action', type='str')
   parser.add_option('--index', type='str')
@@ -349,17 +312,11 @@ def main():
     'type_elastic': type_elastic,
     'elastic_backup': elastic_backup,
     'type_merge': type_merge,
-    'export_hotels_to_csv': export_hotels_to_csv,
-    'export_salons_to_csv': export_salons_to_csv,
-    'remove_hotels': remove_hotels,
-    'remove_restaurants_from_hotel': remove_restaurants_from_hotel,
     'replicate_type': replicate_type,
     'delete_type': delete_type,
-    'update_shop': update_shop,
-    'import_hotels': import_hotels,
-    'export_location_hotels': export_location_hotels,
-    'export_multiple_hotels': export_multiple_hotels,
-    'update_location_hotels': update_location_hotels
+    'update_location': update_location,
+    'import_csv_file': import_csv_file,
+    'export_csv_file': export_csv_file
   }
   command = commands[args[0]]
 

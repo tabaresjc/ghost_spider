@@ -66,3 +66,19 @@ class LocationHotelItem(Item):
   kind = Field()
   votes = Field()
   page_body = Field()
+
+
+class LocationRestaurantItem(Item):
+
+  """required fields."""
+  # name of place
+  page_url = Field()
+  name = Field()
+  name_kata = Field()
+  address = Field()
+  phone = Field()
+  prefecture = Field()
+  area = Field()
+  genre = Field() # genre from loco
+  kind = Field()  # convert genre to latte kind
+  page_body = Field()

@@ -20,8 +20,7 @@ COOKIES_ENABLED = False
 
 
 ITEM_PIPELINES = {
-    'ghost_spider.pipelines.LocationHotelPipeline': 0,
-    'ghost_spider.pipelines.SalonPipeline': 100,
+    'ghost_spider.pipelines.LocationRestaurantPipeline': 0,
 }
 
 ELASTICSEARCH_SERVER = ('192.168.57.101:9200', )

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ghost_spider import helper
-from ghost_spider.items import SalonItem, HotelItem, LocationHotelItem
-from elastic import LocationEs, SalonEs, LocationHotelEs
+from ghost_spider.items import SalonItem, HotelItem, LocationHotelItem, LocationRestaurantItem
+from elastic import LocationEs, SalonEs, LocationHotelEs, LocationRestaurantEs
 
 
 class SalonPipeline(object):
@@ -28,6 +28,20 @@ class LocationHotelPipeline(object):
     data = LocationHotelEs.get_data(item)
     if data:
       LocationHotelEs.save(data)
+    return item
+
+
+class LocationRestaurantPipeline(object):
+
+  """Process & format data after being scrapped from restaurant page."""
+
+  def process_item(self, item, spider):
+    if not isinstance(item, LocationRestaurantItem):
+      return item
+    data = LocationRestaurantEs.get_data(item)
+    if data:
+      LocationRestaurantEs.save(data)
+      LocationRestaurantEs.refresh()
     return item
 
 

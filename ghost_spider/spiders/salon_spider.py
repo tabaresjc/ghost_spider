@@ -6,7 +6,7 @@ from ghost_spider.items import SalonItem
 from ghost_spider.helper import SalonSelectors
 from ghost_spider.util import BaseSpider
 from ghost_spider import helper
-from ghost_spider.urls import URLS
+from ghost_spider.data import URLS
 from ghost_spider.elastic import SalonEs
 
 

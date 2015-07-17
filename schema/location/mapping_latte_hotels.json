@@ -1,5 +1,5 @@
 {
-  "travel_hotels": {
+  "latte_hotels": {
     "properties": {
       "name": {
         "type": "string",

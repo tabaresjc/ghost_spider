@@ -214,7 +214,8 @@ class LocationHotelSelectors(SalonSelectors):
   SEL_START = '//div[@id="outline"]/ul'
   SEL_TITLE = '//div[contains(@class, "title")]'
   SEL_BREADCRUMBS = '//div[@id="sHeader"]/div[contains(@class, "link")]/p[contains(@class, "fl")]/a/text()'
-  SEL_GENRE = '//div[contains(@class, "poiHeader")]/p[contains(@class, "genre")]/a/text()'
+  SEL_GENRE_ALL = '//p[contains(@class, "genre")]/a'
+  SEL_GENRE = '//p[contains(@class, "genre")]/a/text()'
   SEL_VOTES = '//span[@itemprop="votes"]/a/text()'
   HOTEL_KINDS = [u'ホテル', u'旅館', u'民宿', u'ビジネスホテル', u'ペンション', u'保養所', u'公共の宿', u'貸別荘', u'ラブホテル', u'宿泊施設（その他）']
   REPLACE_HOTEL = {
@@ -271,7 +272,7 @@ class LocationHotelSelectors(SalonSelectors):
     return data
 
   @classmethod
-  def get_body(cls, sel):
+  def get_body(cls, sel, is_restaurant=False):
     """extract the most relevant info from the page."""
     meta = sel.xpath(cls.SEL_META).extract()
     breadcrumbs = sel.xpath(cls.SEL_BREADCRUMBS).extract()
@@ -285,6 +286,8 @@ class LocationHotelSelectors(SalonSelectors):
       'info': info[0] if len(info) else u'',
       'title': title[0] if len(title) else u'',
     }
+    if is_restaurant:
+      body['genre'] = sel.xpath(cls.SEL_GENRE_ALL).extract()
     return body
 
   @classmethod
@@ -297,6 +300,36 @@ class LocationHotelSelectors(SalonSelectors):
     except:
       pass
     return vote
+
+  @classmethod
+  def get_category(cls, sel):
+    raw_data = sel.xpath(cls.CANONICAL_URL).re(r'genrecd=\d+')
+    if len(raw_data):
+      return raw_data[0].replace('genrecd=', '')
+    return ""
+
+  @classmethod
+  def get_restaurant_genre(cls, sel):
+    """extract number of reviews posted for this hotel."""
+    genre_code = [s.replace('genrecd=', '') for s in sel.xpath('//p[contains(@class, "genre")]/a').re(r'genrecd=\d+')]
+    genre_str = sel.xpath(cls.SEL_GENRE).extract()
+    genre = []
+    for k, v in enumerate(genre_code):
+      if v == '01':
+        # this genre refers to area mostly
+        continue
+      genre.append(genre_str[k])
+    return genre
+
+  @classmethod
+  def convert_latte_kind(cls, loco_genre):
+    """extract number of reviews posted for this hotel."""
+    from ghost_spider.data import RST_KINDS_LATE_MAP
+    latte_genre = []
+    for genre in loco_genre:
+      if genre in RST_KINDS_LATE_MAP:
+        latte_genre.append(RST_KINDS_LATE_MAP[genre])
+    return latte_genre
 
 # selector for country, prefectures and areas
 SEL_LIST_PLACES = '//div[@id="BODYCON"]/table[1]/tr/td/a'

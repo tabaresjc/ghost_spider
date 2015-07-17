@@ -1,0 +1,181 @@
+{
+  "restaurants": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "lower":{
+            "type": "string",
+            "analyzer": "lower_analyzer"
+          },
+          "lower_romaji":{
+            "type": "string",
+            "analyzer": "romaji_analyzer"
+          },
+          "ascii_romaji":{
+            "type": "string",
+            "analyzer": "romaji_ascii_analyzer"
+          },
+          "katakana":{
+            "type": "string",
+            "analyzer": "katakana_analyzer"
+          }
+        }
+      },
+      "name_low": {
+        "type": "string",
+        "analyzer": "lower_analyzer"
+      },
+      "name_kata": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "lower":{
+            "type": "string",
+            "analyzer": "lower_analyzer"
+          },
+          "lower_romaji":{
+            "type": "string",
+            "analyzer": "romaji_analyzer"
+          },
+          "ascii_romaji":{
+            "type": "string",
+            "analyzer": "romaji_ascii_analyzer"
+          },
+          "katakana":{
+            "type": "string",
+            "analyzer": "katakana_analyzer"
+          }
+        }
+      },
+      "page_url": {
+        "type": "string",
+        "analyzer": "lower_analyzer"
+      },
+      "address": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "phone": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "prefecture_ascii":{
+        "type": "string",
+        "analyzer": "romaji_ascii_analyzer"
+      },
+      "prefecture": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "lower":{
+            "type": "string",
+            "analyzer": "lower_analyzer"
+          },
+          "lower_romaji":{
+            "type": "string",
+            "analyzer": "romaji_analyzer"
+          },
+          "ascii_romaji":{
+            "type": "string",
+            "analyzer": "romaji_ascii_analyzer"
+          },
+          "katakana":{
+            "type": "string",
+            "analyzer": "katakana_analyzer"
+          }
+        }
+      },
+      "area_ascii":{
+        "type": "string",
+        "analyzer": "romaji_ascii_analyzer",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "area": {
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "lower":{
+            "type": "string",
+            "analyzer": "lower_analyzer"
+          },
+          "lower_romaji":{
+            "type": "string",
+            "analyzer": "romaji_analyzer"
+          },
+          "ascii_romaji":{
+            "type": "string",
+            "analyzer": "romaji_ascii_analyzer"
+          },
+          "katakana":{
+            "type": "string",
+            "analyzer": "katakana_analyzer"
+          }
+        }
+      },
+      "genre":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "page_body": {
+        "properties": {
+          "meta": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "breadcrumbs": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "info": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "title": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "genre": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "parent_url_key":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "version" : {
+        "type" : "long"
+      }
+    }
+  }
+}

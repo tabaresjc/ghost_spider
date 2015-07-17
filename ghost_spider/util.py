@@ -120,7 +120,7 @@ class CsvWriter:
       self.writerow(row)
 
 
-class TravelHotelCsv(object):
+class CsvImporter(object):
 
   """Class with specific stuff for csv import/export."""
 
@@ -128,39 +128,63 @@ class TravelHotelCsv(object):
   fieldnames = ('id', 'name', 'kana', 'address', 'phone', 'url_key', 'url')
 
   @classmethod
-  def import_file(cls, csvfile):
-    """Save in database the csv handler.
+  def import_file(cls, filename, kind):
+    """Store data from csv files.
 
-    csvfile: fileHandler
+    filename: string
+    kind: hotel/restaurant
 
     """
     import csv
     import progressbar
     import time
-    from ghost_spider.elastic import LocationTravelHotelEs
+    from ghost_spider.elastic import LatteHotelEs, LatteRestaurantEs
 
+    to_class = None
+    if kind == 'hotel':
+      to_class = LatteHotelEs
+    elif kind == 'restaurant':
+      to_class = LatteRestaurantEs
+    else:
+      raise NotImplementedError()
+
+    csvfile = open(filename, 'rb')
     fieldnames = cls.fieldnames
     reader = csv.DictReader(csvfile, fieldnames)
 
-    LocationTravelHotelEs.DEBUG = False
-    next(reader)  # skip the title line
-    rows = list(reader)
-    total = len(rows)
-    progress = progressbar.AnimatedProgressBar(end=total, width=100)
-    for line, row in enumerate(rows):
-      progress += 1
+    try:
+      to_class.DEBUG = False
+      next(reader)  # skip the title line
+      rows = list(reader)
+      total = len(rows)
+      progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      bulk = ""
+      count_lines = 0
+      for line, row in enumerate(rows):
+        progress += 1
+        progress.show_progress()
+        data = {}
+        for k, v in row.iteritems():
+          if v:
+            if not isinstance(v, (list, tuple)):
+              data.update({k: v.decode('utf-8')})
+        data["name_low"] = data["name"].lower()
+        data["name_cleaned"] = to_class.analyze(data["name"].lower(), 'baseform_analyzer')
+        data["name_cleaned"] = zenhan.z2h(data["name_cleaned"], zenhan.ASCII)
+        data["url"] = data["url"].lower()
+        bulk += to_class.bulk_data(data, action="create")
+        count_lines += 1
+        if (count_lines % 200) == 0:
+          to_class.send(bulk)
+          bulk = ""
+
+      if bulk:
+        to_class.send(bulk)
       progress.show_progress()
-      sanitized = {}
-      for k, v in row.iteritems():
-        if v:
-          if not isinstance(v, (list, tuple)):
-            sanitized.update({k: v.decode('utf-8')})
-      sanitized["name_low"] = sanitized["name"].lower()
-      sanitized["url"] = sanitized["url"].lower()
-      LocationTravelHotelEs.save(sanitized)
-    progress += total + 1
-    progress.show_progress()
-    print " "
+      print " "
+    finally:
+      if csvfile:
+        csvfile.close()
 
 
 class LocationHotelsToCsvFiles(object):
@@ -344,7 +368,7 @@ class SalonToCsvFiles(object):
     u'スタイリスト数',
     u'駐車場',
     u'カット価格',
-    u'Yahoo URL',
+    u'URL',
   ]
 
   def __init__(self, name, **kwargs):
@@ -447,53 +471,28 @@ class SalonToCsvFiles(object):
     return filename
 
 
-class LocationHotelToCsvFiles(object):
+class LocationCsv(object):
   name = None
   LOG_OUTPUT_FILE_INFO = "upload/info-salon-log.txt"
-  TARGET_DIR_FORMAT = u'output/hotels'
+  TARGET_DIR_FORMAT = u'output/restaurants'
 
-  first_row = [u'name', u'kana', u'address', u'prefecture', u'area', u'phone', u'kind', u'home_page', u'travel_url', u'yahoo_url', u'_id']
+  first_row = [u'name', u'kana', u'address', u'prefecture', u'area', u'phone', u'kind', u'travel_url', u'url', u'_id']
   production_first_row = [u'name', u'kana', u'address', u'parent_url_key', u'phone', u'subkind']
   update_row = [u'name', u'kana', u'address', u'parent_url_key', u'phone', u'subkind', u'url', u'serial_id']
 
-  def __init__(self, name, **kwargs):
-    """Class initializer.
-
-    name: string
-
-    """
-    self.name = name
-    super(LocationHotelToCsvFiles, self).__init__(**kwargs)
-
-  @property
-  def logger(self):
-    """error log handler."""
-    try:
-      return self._logger
-    except AttributeError:
-      if not os.path.exists('upload'):
-          os.makedirs('upload')
-      self._logger = logging.getLogger(self.name)
-      ch = logging.FileHandler(self.LOG_OUTPUT_FILE_INFO)
-      formatter = logging.Formatter('%(asctime)s - %(message)s')
-      ch.setFormatter(formatter)
-      ch.setLevel(logging.ERROR)
-      self._logger.addHandler(ch)
-      self.total_count = 0L
-    return self._logger
-
-  def dump(self, action=None):
-    from ghost_spider.elastic import LocationHotelEs, LocationTravelHotelEs
+  @classmethod
+  def dump_hotel(cls, name, action='normal'):
+    from ghost_spider.elastic import LocationHotelEs, LatteHotelEs
     from ghost_spider import progressbar
 
-    filename = self.get_filename_by_name(self.name)
-    query = {"query": {"bool": {"must": [{"term": {"prefecture_ascii": self.name}}], "must_not": []}}}
+    filename = cls.get_filename_by_name(name)
+    query = {"query": {"bool": {"must": [{"term": {"prefecture_ascii": name}}], "must_not": []}}}
 
     if action == 'recover':
       query["query"]["bool"]["must"].append({"term": {"recovered": "1"}})
-      filename = self.get_filename_by_name(u'%s_recover' % self.name)
+      filename = cls.get_filename_by_name(u'%s_recover' % name)
     elif action == 'production':
-      filename = self.get_filename_by_name(u'%s_production' % self.name)
+      filename = cls.get_filename_by_name(u'%s_production' % name)
       query["query"]["bool"]["must"].append({"term": {"version": 10}})
 
     query["query"]["bool"]["must_not"].append({"term": {"genre": u'ラブホテル'}})
@@ -507,32 +506,92 @@ class LocationHotelToCsvFiles(object):
     limit = 100
     sort = [{"area.untouched": "asc"}]
 
-    save_data_to_file = self.save_for_production if action == u'production' else self.save_to_csv
+    save_data_to_file = cls.save_for_production if action == u'production' else cls.save_to_csv
 
     print "=" * 100
-    print "dumping data for %s" % self.name
     while True:
       places, total = LocationHotelEs.pager(query=query, page=page, size=limit, sort=sort)
       page += 1
       if not places or not len(places):
         break
       if not progress:
-        print u'Total: %s' % total
+        print "Dumping data for %s (%s)" % (name, total)
         progress = progressbar.AnimatedProgressBar(end=total, width=100)
       progress + limit
       progress.show_progress()
       for place in places:
-        result = LocationTravelHotelEs.get_place_by_name(place.get('name'))
+        result = LatteHotelEs.get_place_by_name(place.get('name'))
         if result["hits"]["total"] > 0:
-          place["travel_url"] = result["hits"]["hits"][0]["_source"]["url"]
+          place["latte_url"] = result["hits"]["hits"][0]["_source"]["url"]
+
+        if action == 'normal':
+          hotel_kind = u'ホテル'
+          if place.get('kind') and place.get('kind') in LocationHotelSelectors.REPLACE_HOTEL:
+            hotel_kind = place.get('kind')
+          else:
+            for genre in place['genre']:
+              if genre in LocationHotelSelectors.REPLACE_HOTEL:
+                hotel_kind = LocationHotelSelectors.REPLACE_HOTEL[genre]
+                break
+          place['kind'] = hotel_kind
         save_data_to_file(filename, place)
     print " "
 
-  def save_to_csv(self, filename, data):
+  @classmethod
+  def dump_restaurant(cls, name, action=None):
+    from ghost_spider.elastic import LocationRestaurantEs, LatteRestaurantEs
+    from ghost_spider.data import URL_TARGET_URLS
+    from ghost_spider import progressbar
+    from ghost_spider.data import RST_KINDS_LATE_NOT_ALLOWED
+
+    query = {"query": {"bool": {"must": [{"term": {"prefecture_ascii": name}}], "must_not": []}}}
+    if action == 'production':
+      query["query"]["bool"]["must"].append({"term": {"version": 10}})
+
+    query["query"]["bool"]["must_not"].append({"terms": {"genre.untouched": RST_KINDS_LATE_NOT_ALLOWED.keys()}})
+
+    progress = None
+    total = 0
+    page = 1
+    limit = 100
+    sort = [{"area.untouched": "asc"}]
+
+    save_data_to_file = cls.save_for_production if action == u'production' else cls.save_to_csv
+
+    print "=" * 100
+    count_lines = 0
+
+    while True:
+      places, total = LocationRestaurantEs.pager(query=query, page=page, size=limit, sort=sort)
+      page += 1
+      if not places or not len(places):
+        break
+      if not progress:
+        print "Dumping data for %s (%s)" % (name, total)
+        progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      progress + limit
+      progress.show_progress()
+      for place in places:
+        result = LatteRestaurantEs.get_place_by_name(place.get('name'))
+        if result["hits"]["total"] > 0:
+          place["latte_url"] = result["hits"]["hits"][0]["_source"]["url"]
+          place["latte_url"] = place["latte_url"].replace(URL_TARGET_URLS[0], URL_TARGET_URLS[1])
+
+        place['kind'] = u'|'.join(place['kind'])
+        if count_lines % 5000 == 0:
+          count = (count_lines / 5000) + 1
+          filename = cls.get_filename_by_name(name, count=count, remove_file=True)
+
+        count_lines += 1
+        save_data_to_file(filename, place)
+    print " "
+
+  @classmethod
+  def save_to_csv(cls, filename, data):
     """Save this data on csv file by prefecture"""
     row = []
 
-    address = zenhan.z2h(data['address'], zenhan.ALL)
+    address = zenhan.z2h(data['address'], zenhan.ASCII)
     # remove the zip code
     address = re.sub(r'%s\d+-\d+' % u'〒', '', address).strip()
     row.append(data['name'])
@@ -543,24 +602,17 @@ class LocationHotelToCsvFiles(object):
     row.append(data['area'])
 
     row.append(zenhan.z2h(data['phone'], zenhan.ALL))
-    hotel_kind = u'ホテル'
-    if data.get('kind') and data.get('kind') in LocationHotelSelectors.REPLACE_HOTEL:
-      hotel_kind = data.get('kind')
-    else:
-      for genre in data['genre']:
-        if genre in LocationHotelSelectors.REPLACE_HOTEL:
-          hotel_kind = LocationHotelSelectors.REPLACE_HOTEL[genre]
-          break
-    row.append(hotel_kind)
-    row.append(data['shop_url'])
 
-    row.append(data.get('travel_url') or u'')
+    row.append(data['kind'])
+
+    row.append(data.get('latte_url') or u'')
     row.append(data['page_url'])
     row.append(data['id'])
 
-    CsvWriter.write_to_csv(filename, row, firs_row=self.first_row)
+    CsvWriter.write_to_csv(filename, row, firs_row=cls.first_row)
 
-  def save_for_production(self, filename, data):
+  @classmethod
+  def save_for_production(cls, filename, data):
     """Save this data on csv file by prefecture"""
     row = []
 
@@ -581,13 +633,22 @@ class LocationHotelToCsvFiles(object):
           hotel_kind = LocationHotelSelectors.REPLACE_HOTEL[genre]
           break
     row.append(hotel_kind)
-    CsvWriter.write_to_csv(filename, row, firs_row=self.production_first_row)
+    CsvWriter.write_to_csv(filename, row, firs_row=cls.production_first_row)
 
-  def get_filename_by_name(self, name):
-    directory = self.TARGET_DIR_FORMAT
+  @classmethod
+  def get_filename_by_name(cls, name, count=0, remove_file=False):
+    directory = cls.TARGET_DIR_FORMAT
     if not os.path.exists(directory):
         os.makedirs(directory)
-    return os.path.join(directory, u'%s.csv' % name)
+
+    if count:
+      filename = os.path.join(directory, u'%s_%s.csv' % (name, count))
+    else:
+      filename = os.path.join(directory, u'%s.csv' % name)
+
+    if remove_file and os.path.exists(filename):
+      os.remove(filename)
+    return filename
 
   @classmethod
   def import_file(cls, csvfile):

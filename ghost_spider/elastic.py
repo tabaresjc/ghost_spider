@@ -92,7 +92,7 @@ class Elastic(object):
     conn.request(method="post", myindex=cls.index, mysuffix="_refresh")
 
   @classmethod
-  def analyze(cls, data, analyzer):
+  def analyze(cls, data, analyzer, separator=' '):
     """Make an analyze request.
 
     data: dict data to be analyzed.
@@ -110,7 +110,7 @@ class Elastic(object):
     value = []
     for token in result["tokens"]:
       value.append(token["token"])
-    return ' '.join(value)
+    return separator.join(value)
 
   @classmethod
   def search(cls, query, suffix=None, pager=False):
@@ -428,7 +428,7 @@ class SalonEs(Elastic, CommonElastic):
 
     data['page_body'] = item['page_body']
     # data['recovered'] = 1
-    data['id'] = SalonEs.get_hash(u'%s%s' % (data['name_low'], item['phone']))
+    data['id'] = cls.get_hash(u'%s%s' % (data['name_low'], item['phone']))
     return data
 
 
@@ -467,13 +467,53 @@ class LocationHotelEs(Elastic, CommonElastic):
     data['votes'] = item['votes']
     data['page_body'] = item['page_body']
     data['kind'] = item['kind']
-    data['id'] = SalonEs.get_hash(u'%s%s' % (data['name_low'], item['phone']))
+    data['id'] = cls.get_hash(u'%s%s' % (data['name_low'], item['phone']))
     return data
 
 
-class LocationTravelHotelEs(Elastic, CommonElastic):
+class LocationRestaurantEs(Elastic, CommonElastic):
+
+  """Store scrapped restaurants from Yahoo LOCO."""
+
+  index = "location"
+  type = "restaurants"
+
+  @classmethod
+  def get_data(cls, item):
+    data = {}
+    data['name_low'] = item['name'].lower().strip()
+    data['name'] = item['name']
+    data['name_kata'] = item['name_kata']
+    data['page_url'] = item['page_url'].lower()
+    data['address'] = item['address']
+    data['phone'] = item['phone']
+
+    data['prefecture'] = item['prefecture']
+    if item['prefecture']:
+      data['prefecture_ascii'] = cls.analyze(item['prefecture'], 'romaji_ascii_normal_analyzer')
+
+    data['area'] = item['area']
+    if item['area']:
+      data['area_ascii'] = cls.analyze(item['area'], 'romaji_ascii_normal_analyzer')
+
+    data['page_body'] = item['page_body']
+    data['kind'] = item['kind']
+    data['genre'] = item['genre']
+    data['id'] = cls.get_hash(item['page_url'].lower().split('?')[0])
+    return data
+
+
+class LatteHotelEs(Elastic, CommonElastic):
 
   """Store hotels from Latte."""
 
   index = "location"
-  type = "travel_hotels"
+  type = "latte_hotels"
+
+
+class LatteRestaurantEs(Elastic, CommonElastic):
+
+  """Store restaurants from Latte."""
+
+  index = "location"
+  type = "latte_restaurants"

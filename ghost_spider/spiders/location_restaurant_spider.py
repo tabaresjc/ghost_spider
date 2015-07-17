@@ -2,21 +2,19 @@
 
 from scrapy.selector import Selector
 from scrapy.http import Request
-from ghost_spider.items import LocationHotelItem
+from ghost_spider.items import LocationRestaurantItem
 from ghost_spider.helper import LocationHotelSelectors
+from ghost_spider.data import URLS, GOURMET_CATEGORY
+from ghost_spider.elastic import LocationRestaurantEs
 from ghost_spider.util import BaseSpider
 from ghost_spider import helper
-from ghost_spider.data import URLS
-from ghost_spider.elastic import LocationHotelEs
 
 
 class LocationHotelSpider(BaseSpider):
-  name = "location_hotel"
+  name = "location_restaurant"
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
-  start_urls = (URLS['hiroshima'] + URLS['yamagushi'] + URLS['tokushima'] + URLS['kagawa'] + URLS['ehime']
-    + URLS['kochi'] + URLS['fukuoka'] + URLS['saga'] + URLS['nagasaki'] + URLS['kumamoto']
-    + URLS['oita'] + URLS['miyazaki'] + URLS['kagoshima'] + URLS['okinawa'])
+  start_urls = URLS['aomori']
   count = 0
   total = 0
   scan_mode = False
@@ -42,8 +40,18 @@ class LocationHotelSpider(BaseSpider):
       self.total += total
       if total > 999:
         # yahoo search can not paginate beyond 1000 items
-        # so need to run crawler for smaller areas
-        self.log_message(u'Pagination overflow: %s' % response.url)
+        # so need to run crawler for smaller areas or cateories
+        page_cat = LocationHotelSelectors.get_category(sel)
+        if page_cat and page_cat != "01":
+          self.log_message(u'Pagination overflow: %s' % response.url)
+        else:
+          for category in GOURMET_CATEGORY:
+            next_page = response.url.replace('genrecd=01', 'genrecd=%s' % category)
+            print u'new links --> %s' % next_page
+            request = Request(next_page, callback=self.parse, errback=self.parse_err)
+            request.meta['page_kind'] = 'list'
+            yield request
+
       if self.start_urls[-1] == response.url:
         self.log_message(u'Counted this many places: %s' % self.total)
 
@@ -53,7 +61,7 @@ class LocationHotelSpider(BaseSpider):
     if links:
       for link in links:
         canonical = link.split('?')[0]
-        if LocationHotelEs.check_by_url(canonical):
+        if LocationRestaurantEs.check_by_url(canonical):
           # print u'skipped: %s' % link
           continue
         request = Request(link, callback=self.parse_salon, errback=self.parse_err)
@@ -71,34 +79,23 @@ class LocationHotelSpider(BaseSpider):
 
   def parse_salon(self, response):
     sel = Selector(response)
-    item = LocationHotelItem()
+    item = LocationRestaurantItem()
     item['page_url'] = self.get_property(sel, LocationHotelSelectors.CANONICAL_URL) or response.url
     item['name'] = self.get_property(sel, LocationHotelSelectors.NAME)
     item['name_kata'] = self.get_property(sel, LocationHotelSelectors.NAME_KATA)
     item['address'] = self.get_property(sel, LocationHotelSelectors.ADDRESS, clean=True)
-    item['routes'] = LocationHotelSelectors.get_routes(sel)
     item['phone'] = LocationHotelSelectors.get_phone(sel)
-    item['shop_url'] = LocationHotelSelectors.get_shop_url(sel)
-
-    comment, credit_cards = LocationHotelSelectors.get_credit_cards(sel)
-    item['credit_cards_comment'] = comment
-    item['credit_cards'] = credit_cards
 
     prefecture, area = LocationHotelSelectors.get_prefecture_area(sel)
 
     item['prefecture'] = prefecture
     item['area'] = area
-    item['genre'] = LocationHotelSelectors.get_genre(sel)
+    genre = LocationHotelSelectors.get_restaurant_genre(sel)
+    item['genre'] = genre
+    item['kind'] = LocationHotelSelectors.convert_latte_kind(genre)
 
-    checkin, checkout = LocationHotelSelectors.get_working_time(sel)
-    item['checkin'] = checkin
-    item['checkout'] = checkout
-    item['kind'] = LocationHotelSelectors.get_hotel_type(sel)
-    item['votes'] = LocationHotelSelectors.get_votes(sel)
-    item['page_body'] = LocationHotelSelectors.get_body(sel)
+    item['page_body'] = LocationHotelSelectors.get_body(sel, is_restaurant=True)
     self.count += 1
-    # print "=" * 100
     print u'%s: %s > %s -> %s' % (self.count, item['prefecture'], item['area'], item['name'])
-    # for key, value in item.iteritems():
-    #   print u'%s: %s' % (key, u'|'.join(value) if isinstance(value, (list, tuple)) else value)
+
     return item
