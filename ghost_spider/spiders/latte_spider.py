@@ -13,7 +13,7 @@ from ghost_spider.elastic import SalonEs
 class LatteSpider(BaseSpider):
   name = "latte_spider"
   allowed_domains = ["localhost", "latte.la"]
-  start_urls = URLS['latte']
+  start_urls = []
   handle_httpstatus_list = [400, 404, 500]
   # start_urls = ["file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/salons/list2.html"]
 

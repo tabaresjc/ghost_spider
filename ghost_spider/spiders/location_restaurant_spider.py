@@ -14,7 +14,7 @@ class LocationHotelSpider(BaseSpider):
   name = "location_restaurant"
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
-  start_urls = URLS['aomori']
+  start_urls = URLS['tokyo']
   count = 0
   total = 0
   scan_mode = False

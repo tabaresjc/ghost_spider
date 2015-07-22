@@ -15,7 +15,6 @@ class SalonSpider(BaseSpider):
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
   start_urls = URLS['tokyo']
-  # start_urls = ["file://localhost/Users/jctt/Developer/crawler/ghost_spider/samples/salons/list2.html"]
   count = 0
   count_skip = 0
 
