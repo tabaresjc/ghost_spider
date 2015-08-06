@@ -24,13 +24,13 @@ def import_csv_file(filename, kind):
   CsvImporter.import_file(filename, kind)
 
 
-def update_location_hotels(name=None):
+def update_location_from_file(filename, kind):
   import os
   from ghost_spider.util import LocationCsv
 
-  f = open(name, 'rb')
+  f = open(filename, 'rb')
   try:
-    LocationCsv.import_file(f)
+    LocationCsv.import_file(f, kind)
   finally:
     if f:
       f.close()
@@ -316,7 +316,8 @@ def main():
     'delete_type': delete_type,
     'update_location': update_location,
     'import_csv_file': import_csv_file,
-    'export_csv_file': export_csv_file
+    'export_csv_file': export_csv_file,
+    'update_location_from_file': update_location_from_file
   }
   command = commands[args[0]]
 

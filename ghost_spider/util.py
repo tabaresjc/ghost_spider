@@ -172,6 +172,7 @@ class CsvImporter(object):
         data["name_cleaned"] = to_class.analyze(data["name"].lower(), 'baseform_analyzer')
         data["name_cleaned"] = zenhan.z2h(data["name_cleaned"], zenhan.ASCII)
         data["url"] = data["url"].lower()
+        data["kind"] = data["kind"].split('|') if data.get('kind') else []
         bulk += to_class.bulk_data(data, action="create")
         count_lines += 1
         if (count_lines % 200) == 0:
@@ -578,8 +579,8 @@ class LocationCsv(object):
           place["latte_url"] = place["latte_url"].replace(URL_TARGET_URLS[0], URL_TARGET_URLS[1])
 
         place['kind'] = u'|'.join(place['kind'])
-        if count_lines % 5000 == 0:
-          count = (count_lines / 5000) + 1
+        if count_lines % 10000 == 0:
+          count = (count_lines / 10000) + 1
           filename = cls.get_filename_by_name(name, count=count, remove_file=True)
 
         count_lines += 1
@@ -651,7 +652,7 @@ class LocationCsv(object):
     return filename
 
   @classmethod
-  def import_file(cls, csvfile):
+  def import_file(cls, csvfile, kind):
     """Save in database the csv handler.
 
     csvfile: fileHandler
@@ -660,10 +661,14 @@ class LocationCsv(object):
     import csv
     import progressbar
     import time
-    from ghost_spider.elastic import LocationHotelEs
+    from ghost_spider.elastic import LocationHotelEs, LocationRestaurantEs
     reader = csv.DictReader(csvfile, cls.update_row)
-
-    LocationHotelEs.DEBUG = False
+    if not kind in ['hotel', 'restaurant']:
+      raise NotImplementedError()
+    classHolder = LocationHotelEs
+    if kind == 'restaurant':
+      classHolder = LocationRestaurantEs
+    classHolder.DEBUG = False
     next(reader)  # skip the title line
     rows = list(reader)
     total = len(rows)
@@ -678,8 +683,10 @@ class LocationCsv(object):
         if v:
           if not isinstance(v, (list, tuple)):
             sanitized.update({k: v.decode('utf-8').strip()})
-      url = sanitized['url']
-      result = LocationHotelEs.get_place_by_url(url)
+      # url = sanitized['url']
+      # result = classHolder.get_place_by_url(url)
+      ids = [sanitized['serial_id']]
+      result = classHolder.get_place_by_ids(ids)
       if result["hits"]["total"] > 0:
         data = result["hits"]["hits"][0]["_source"]
         data_id = result["hits"]["hits"][0]["_id"]
@@ -689,15 +696,17 @@ class LocationCsv(object):
         data['address'] = sanitized['address']
         data['phone'] = sanitized.get('phone') or u''
         data['parent_url_key'] = sanitized['parent_url_key']
+        if kind == 'restaurant':
+          data["kind"] = sanitized["subkind"].split('|') if sanitized.get('sanitized') else []
         data['version'] = 10
-        bulk += LocationHotelEs.bulk_data(data, data_id=data_id, action="update")
+        bulk += classHolder.bulk_data(data, data_id=data_id, action="update")
         if (count_lines % 100) == 0:
-          LocationHotelEs.send(bulk)
+          classHolder.send(bulk)
           bulk = ""
         count_lines += 1
 
     if bulk:
-      LocationHotelEs.send(bulk)
+      classHolder.send(bulk)
     progress += total + 1
     progress.show_progress()
     print " "
