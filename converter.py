@@ -4,11 +4,14 @@ from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 
 def export_csv_file(name, kind, action=None):
-  from ghost_spider.util import LocationCsv
+  from ghost_spider.util import LocationCsv, SalonToCsvFiles
   if kind == 'hotel':
     LocationCsv.dump_hotel(name, action=action)
   elif kind == 'restaurant':
     LocationCsv.dump_restaurant(name, action=action)
+  elif kind == 'salon':
+    file_generator = SalonToCsvFiles(name)
+    file_generator.dump(action=action)
   else:
     NotImplementedError()
 
@@ -39,7 +42,7 @@ def update_location_from_file(filename, kind):
 def update_location_from_folder(foldername, kind):
   from os import listdir
   from os.path import isfile, join
-  onlyfiles = [f for f in listdir(foldername) if isfile(join(foldername,f))]
+  onlyfiles = [f for f in listdir(foldername) if isfile(join(foldername, f))]
 
   for filename in onlyfiles:
     if '.csv' in filename:
