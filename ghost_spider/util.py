@@ -479,7 +479,7 @@ class LocationCsv(object):
 
   first_row = [u'name', u'kana', u'address', u'prefecture', u'area', u'phone', u'kind', u'travel_url', u'url', u'_id']
   production_first_row = [u'name', u'kana', u'address', u'parent_url_key', u'phone', u'subkind']
-  update_row = [u'name', u'kana', u'address', u'parent_url_key', u'phone', u'subkind', u'url', u'serial_id']
+  update_row = [u'name', u'kana', u'address', u'phone', u'parent_url_key', u'subkind', u'url', u'serial_id']
 
   @classmethod
   def dump_hotel(cls, name, action='normal'):
@@ -625,20 +625,20 @@ class LocationCsv(object):
     row.append(address)
     row.append(data['parent_url_key'])
     row.append(zenhan.z2h(data['phone'], zenhan.ALL))
-    hotel_kind = u'ホテル'
-    if data.get('kind') and data.get('kind') in LocationHotelSelectors.REPLACE_HOTEL:
-      hotel_kind = data.get('kind')
-    else:
-      for genre in data['genre']:
-        if genre in LocationHotelSelectors.REPLACE_HOTEL:
-          hotel_kind = LocationHotelSelectors.REPLACE_HOTEL[genre]
-          break
-    row.append(hotel_kind)
+    # hotel_kind = u'ホテル'
+    # if data.get('kind') and data.get('kind') in LocationHotelSelectors.REPLACE_HOTEL:
+    #   hotel_kind = data.get('kind')
+    # else:
+    #   for genre in data['genre']:
+    #     if genre in LocationHotelSelectors.REPLACE_HOTEL:
+    #       hotel_kind = LocationHotelSelectors.REPLACE_HOTEL[genre]
+    #       break
+    row.append(data.get('kind') or '')
     CsvWriter.write_to_csv(filename, row, firs_row=cls.production_first_row)
 
   @classmethod
   def get_filename_by_name(cls, name, count=0, remove_file=False):
-    directory = cls.TARGET_DIR_FORMAT
+    directory = u'%s/%s' % (cls.TARGET_DIR_FORMAT, name)
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -683,6 +683,8 @@ class LocationCsv(object):
         if v:
           if not isinstance(v, (list, tuple)):
             sanitized.update({k: v.decode('utf-8').strip()})
+      if not sanitized.get('parent_url_key'):
+        continue
       # url = sanitized['url']
       # result = classHolder.get_place_by_url(url)
       ids = [sanitized['serial_id']]
@@ -696,8 +698,7 @@ class LocationCsv(object):
         data['address'] = sanitized['address']
         data['phone'] = sanitized.get('phone') or u''
         data['parent_url_key'] = sanitized['parent_url_key']
-        if kind == 'restaurant':
-          data["kind"] = sanitized["subkind"].split('|') if sanitized.get('sanitized') else []
+        data['kind'] = sanitized['subkind'].split('|') if sanitized.get('subkind') else []
         data['version'] = 10
         bulk += classHolder.bulk_data(data, data_id=data_id, action="update")
         if (count_lines % 100) == 0:

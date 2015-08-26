@@ -15,7 +15,7 @@ NEWSPIDER_MODULE = 'ghost_spider.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36'
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 3
 COOKIES_ENABLED = False
 
 

@@ -3,7 +3,7 @@ import sys
 from ghost_spider.settings import setup_elastic_connection as get_es_connection
 
 
-def export_csv_file(kind, name, action=None):
+def export_csv_file(name, kind, action=None):
   from ghost_spider.util import LocationCsv
   if kind == 'hotel':
     LocationCsv.dump_hotel(name, action=action)
@@ -34,6 +34,20 @@ def update_location_from_file(filename, kind):
   finally:
     if f:
       f.close()
+
+
+def update_location_from_folder(foldername, kind):
+  from os import listdir
+  from os.path import isfile, join
+  onlyfiles = [f for f in listdir(foldername) if isfile(join(foldername,f))]
+
+  for filename in onlyfiles:
+    if '.csv' in filename:
+      print " "
+      print "*" * 50
+      print "processing % s" % filename
+      nf = join(foldername, filename)
+      update_location_from_file(nf, kind)
 
 
 def index_elastic(index, action="create", config_file=None):
@@ -292,6 +306,7 @@ def main():
   parser.add_option('--id', type='int')
   parser.add_option('--name', type='str')
   parser.add_option('--filename', type='str')
+  parser.add_option('--foldername', type='str')
   parser.add_option('--kind', type='str')
   parser.add_option('--file', type='str')
   parser.add_option('--action', type='str')
@@ -317,7 +332,8 @@ def main():
     'update_location': update_location,
     'import_csv_file': import_csv_file,
     'export_csv_file': export_csv_file,
-    'update_location_from_file': update_location_from_file
+    'update_location_from_file': update_location_from_file,
+    'update_location_from_folder': update_location_from_folder
   }
   command = commands[args[0]]
 
