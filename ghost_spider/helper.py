@@ -4,6 +4,34 @@ import urllib
 import re
 
 
+class AirportSelectors(object):
+  """List of selectors for Airports."""
+  LIST_AIRPORTS = '//div[contains(@class, "inner")]/table/tr/td[3]/a/@href'
+  NAME = '//div[contains(@class, "box-main")]//div[contains(@class, "basic_info_title clear")]/h2/a/text()'
+  NAME_ENG = '//div[contains(@class, "box-main")]//div[contains(@class, "basic_info_title clear")]/h2/a/span/text()'
+  AREA_INFO = u'//div[contains(@class, "info_ex")]//dt[contains(., "%s")]/following-sibling::dd/a/text()'
+  AIRPORT_INFO = u'//div[contains(@class, "info_ex")]//dt[contains(., "%s")]/following-sibling::dd/text()'
+
+  @classmethod
+  def get_area_info(cls, sel):
+    raw_data = sel.xpath(cls.AREA_INFO % u'都市').extract()
+    area = country = ''
+    if raw_data and len(raw_data) >= 2:
+      area = raw_data[0].strip()
+      country = raw_data[1].strip()
+    return area, country
+
+  @classmethod
+  def get_airport_info(cls, sel):
+    raw_data = sel.xpath(cls.AIRPORT_INFO % u'コード').extract()
+    codes = raw_data[0].split('|')
+    code = code2 = ''
+    if codes and len(codes) >= 2:
+      code = codes[0].split(':')[1].strip()
+      code2 = codes[1].split(':')[1].strip()
+    return code, code2
+
+
 class SalonSelectors(object):
   """List of selectors for Salons."""
   LIST_SALONS = '//div[contains(@class, "uWrap")]/div[contains(@class, "LSaj")]/div[contains(@class, "item")]//h3[contains(@class, "ttl")]/a/@href'

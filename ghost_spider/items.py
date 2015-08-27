@@ -82,3 +82,16 @@ class LocationRestaurantItem(Item):
   genre = Field() # genre from loco
   kind = Field()  # convert genre to latte kind
   page_body = Field()
+
+
+class LocationAirportItem(Item):
+
+  """required fields."""
+  page_url = Field()
+  name = Field()
+  name_eng = Field()
+  code = Field()
+  code2 = Field()
+  area = Field()
+  country = Field()
+  breadcrumbs = Field()
