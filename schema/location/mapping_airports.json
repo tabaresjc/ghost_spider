@@ -88,6 +88,18 @@
       },
       "version" : {
         "type" : "long"
+      },
+      "place_url_key":{
+        "type": "string",
+        "fields": {
+          "untouched": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "place_id" : {
+        "type" : "long"
       }
     }
   }

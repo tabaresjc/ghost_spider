@@ -218,6 +218,120 @@ def update_location():
   print " "
 
 
+def update_airports():
+  """Get the city from Latte and update airport."""
+  # build bulk
+  from ghost_spider.elastic import LocationAirportEs
+  from ghost_spider import progressbar
+  import requests
+  import time
+  size = 100
+  page = 0
+  progress = None
+  total = 0
+  query = {"query": {"match_all": {}}, "size": size, "from": 0}
+  query["sort"] = [{"name.untouched": "asc"}]
+  while True:
+    query["from"] = page * size
+    results = LocationAirportEs.search(query)
+    if not progress:
+      total = results["hits"]["total"]
+      print "total %s" % total
+      progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      progress.show_progress()
+
+    if not results["hits"]["hits"]:
+      break
+    
+    page += 1
+    bulk = ""
+    for result in results["hits"]["hits"]:
+      location = result["_source"]
+      data_id = result["_id"]
+      if not location.get('place_id'):
+        ret_json = []
+        url = u'https://latte.la/travel/json?term=%s&kind=area1-area2-area3-city1-city2-city3' % location["area"]
+        ret = requests.get(url, params={})
+        ret_json = ret.json()
+        found_place = None
+        progress + 1
+        progress.show_progress()
+
+        for place in ret_json:
+          if place.get('value') == location["area"]:
+            found_place = place
+            break
+        if found_place:
+          location["place_id"] = found_place["placeid"]
+          location["place_url_key"] = found_place["url_key"]
+      else:
+        location["place_url_key"] = location["url_key"]
+        location["place_id"] = long(location.get('place_id') or 0)
+        location.pop('url_key')
+
+      bulk += LocationAirportEs.bulk_data(location, action="update", data_id=data_id)
+
+    if bulk:
+      LocationAirportEs.send(bulk)
+  if progress:
+    progress + total
+    progress.show_progress()
+  print " "
+
+def dump_airports(filename):
+  # build bulk
+  from ghost_spider.elastic import LocationAirportEs
+  from ghost_spider.util import CsvWriter
+  from ghost_spider import progressbar
+  import requests
+  import time
+  import os
+  size = 100
+  page = 0
+  progress = None
+  total = 0
+  query = {"query": {"match_all": {}}, "size": size, "from": 0}
+  query["sort"] = [{"country.untouched": "asc"}]
+  first_row = ["name", "name_eng", "IATA", "NTGA", "country", "city", "placeid", "place_url"]
+  if os.path.exists(filename):
+    os.remove(filename)
+  while True:
+    query["from"] = page * size
+    results = LocationAirportEs.search(query)
+    if not progress:
+      total = results["hits"]["total"]
+      print "total %s" % total
+      progress = progressbar.AnimatedProgressBar(end=total, width=100)
+      progress.show_progress()
+
+    if not results["hits"]["hits"]:
+      break
+    
+    page += 1
+    bulk = ""
+    for result in results["hits"]["hits"]:
+      location = result["_source"]
+      data_id = result["_id"]
+      progress + 1
+      progress.show_progress()
+      row = []
+      row.append(location.get('name'))
+      row.append(location.get('name_eng'))
+      row.append(location.get('code') or '')
+      row.append(location.get('code2') or '')
+      row.append(location.get('country') or '')
+      row.append(location.get('area') or '')
+      row.append(unicode(location.get('place_id') or ''))
+      row.append(location.get('url_key') or '')
+
+      CsvWriter.write_to_csv(filename, row, firs_row=first_row)
+
+  if progress:
+    progress + total
+    progress.show_progress()
+  print " "
+
+
 def delete_type(index, type):
   """delete a type from index."""
   es = get_es_connection()
@@ -336,7 +450,9 @@ def main():
     'import_csv_file': import_csv_file,
     'export_csv_file': export_csv_file,
     'update_location_from_file': update_location_from_file,
-    'update_location_from_folder': update_location_from_folder
+    'update_location_from_folder': update_location_from_folder,
+    'update_airports': update_airports,
+    'dump_airports': dump_airports
   }
   command = commands[args[0]]
 

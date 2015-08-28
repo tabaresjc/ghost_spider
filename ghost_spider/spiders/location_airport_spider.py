@@ -4,7 +4,7 @@ from scrapy.selector import Selector
 from scrapy.http import Request
 from ghost_spider.items import LocationAirportItem
 from ghost_spider.helper import AirportSelectors
-from ghost_spider.data import URLS, GOURMET_CATEGORY
+from ghost_spider.data import AIRPORT_URLS, GOURMET_CATEGORY
 from ghost_spider.elastic import LocationAirportEs
 from ghost_spider.util import BaseSpider
 from ghost_spider import helper
@@ -14,34 +14,7 @@ class LocationAirportSpider(BaseSpider):
   name = "location_airport"
   allowed_domains = ["localhost", "flyteam.jp"]
   base_url = 'http://flyteam.jp'
-  start_urls = [
-    "http://flyteam.jp/airports/iata/A",
-    # "http://flyteam.jp/airports/iata/B",
-    # "http://flyteam.jp/airports/iata/C",
-    # "http://flyteam.jp/airports/iata/D",
-    # "http://flyteam.jp/airports/iata/E",
-    # "http://flyteam.jp/airports/iata/F",
-    # "http://flyteam.jp/airports/iata/G",
-    # "http://flyteam.jp/airports/iata/H",
-    # "http://flyteam.jp/airports/iata/I",
-    # "http://flyteam.jp/airports/iata/J",
-    # "http://flyteam.jp/airports/iata/K",
-    # "http://flyteam.jp/airports/iata/L",
-    # "http://flyteam.jp/airports/iata/M",
-    # "http://flyteam.jp/airports/iata/N",
-    # "http://flyteam.jp/airports/iata/O",
-    # "http://flyteam.jp/airports/iata/P",
-    # "http://flyteam.jp/airports/iata/Q",
-    # "http://flyteam.jp/airports/iata/R",
-    # "http://flyteam.jp/airports/iata/S",
-    # "http://flyteam.jp/airports/iata/T",
-    # "http://flyteam.jp/airports/iata/U",
-    # "http://flyteam.jp/airports/iata/V",
-    # "http://flyteam.jp/airports/iata/W",
-    # "http://flyteam.jp/airports/iata/X",
-    # "http://flyteam.jp/airports/iata/Y",
-    # "http://flyteam.jp/airports/iata/Z",
-  ]
+  start_urls = AIRPORT_URLS
   count = 0
   total = 0
   scan_mode = False
@@ -91,4 +64,6 @@ class LocationAirportSpider(BaseSpider):
     item['code'] = code
     item['code2'] = code2
     item['breadcrumbs'] = ''
+    self.count += 1
+    print u'%s: %s > %s -> %s' % (self.count, item['country'], item['area'], item['name'])
     return item
