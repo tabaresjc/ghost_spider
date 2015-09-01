@@ -10,11 +10,13 @@ from ghost_spider.util import BaseSpider
 from ghost_spider import helper
 
 
-class LocationHotelSpider(BaseSpider):
-  name = "location_restaurant"
+class LocationRestaurantSpider(BaseSpider):
+  name = "location_restaurant_more"
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
-  start_urls = (URLS['iwate'] + URLS['miyagi'] + URLS['akita'] + URLS['yamagata'] + URLS['fukushima'] + URLS['ibaraki'] + URLS['tochigi'] + URLS['gunma'])
+  start_urls = (URLS['niigata'] + URLS['toyama'] + URLS['ishikawa'] + URLS['fukui'] + URLS['yamanashi']
+    + URLS['nagano'] + URLS['gifu'] + URLS['shizuoka'] + URLS['aichi'] + URLS['ishikawa'] + URLS['ishikawa']
+    + URLS['ishikawa'] + URLS['ishikawa'])
   count = 0
   total = 0
   scan_mode = False
@@ -24,7 +26,7 @@ class LocationHotelSpider(BaseSpider):
     self.log_message('Starting...')
     self.count = 0
     self.total = 0
-    super(LocationHotelSpider, self).__init__(self.name, **kwargs)
+    super(LocationRestaurantSpider, self).__init__(self.name, **kwargs)
 
   def parse(self, response):
     sel = Selector(response)
