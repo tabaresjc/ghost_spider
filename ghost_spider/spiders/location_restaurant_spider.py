@@ -11,12 +11,12 @@ from ghost_spider import helper
 
 
 class LocationRestaurantSpider(BaseSpider):
-  name = "location_restaurant_more"
+  name = "location_restaurant"
   allowed_domains = ["localhost", "search.loco.yahoo.co.jp", "loco.yahoo.co.jp"]
   target_base_url = "http://search.loco.yahoo.co.jp"
-  start_urls = (URLS['niigata'] + URLS['toyama'] + URLS['ishikawa'] + URLS['fukui'] + URLS['yamanashi']
-    + URLS['nagano'] + URLS['gifu'] + URLS['shizuoka'] + URLS['aichi'] + URLS['mie'] + URLS['shiga']
-    + URLS['nara'] + URLS['wakayama'])
+  start_urls = (URLS['tottori'] + URLS['shimane'] + URLS['okayama'] + URLS['hiroshima'] + URLS['yamagushi']
+    + URLS['tokushima'] + URLS['kagawa'] + URLS['ehime'] + URLS['kochi'] + URLS['fukuoka'] + URLS['saga']
+    + URLS['nagasaki'] + URLS['kumamoto'] + URLS['oita'] + URLS['miyazaki'] + URLS['kagoshima'] + URLS['okinawa'])
   count = 0
   total = 0
   scan_mode = False
