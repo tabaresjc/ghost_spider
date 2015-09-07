@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ghost_spider import helper
-from ghost_spider.items import SalonItem, HotelItem, LocationHotelItem, LocationRestaurantItem, LocationAirportItem
-from elastic import LocationEs, SalonEs, LocationHotelEs, LocationRestaurantEs, LocationAirportEs
+from ghost_spider.items import SalonItem, HotelItem, LocationHotelItem, LocationRestaurantItem, LocationAirportItem, LocationBusItem
+from elastic import LocationEs, SalonEs, LocationHotelEs, LocationRestaurantEs, LocationAirportEs, LocationBusEs
 
 
 class SalonPipeline(object):
@@ -56,6 +56,20 @@ class LocationAirportPipeline(object):
     if data:
       LocationAirportEs.save(data)
       LocationAirportEs.refresh()
+    return item
+
+
+class LocationBusPipeline(object):
+
+  """Process & format data after being scrapped from bus pages."""
+
+  def process_item(self, item, spider):
+    if not isinstance(item, LocationBusItem):
+      return item
+    data = LocationBusEs.get_data(item)
+    if data:
+      LocationBusEs.save(data)
+      LocationBusEs.refresh()
     return item
 
 

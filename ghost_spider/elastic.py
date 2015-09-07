@@ -528,6 +528,27 @@ class LocationAirportEs(Elastic, CommonElastic):
     return data
 
 
+class LocationBusEs(Elastic, CommonElastic):
+
+  """Store scrapped restaurants from Yahoo LOCO."""
+
+  index = "location"
+  type = "bus_stop"
+
+  @classmethod
+  def get_data(cls, item):
+    data = {}
+
+    data['name'] = item['name']
+    data['prefecture'] = item['prefecture']
+    data['prefecture_ascii'] = item['prefecture_ascii']
+    data['latitude'] = item['latitude']
+    data['longitude'] = item['longitude']
+
+    data['id'] = cls.get_hash(item['name'].lower() + str(item['latitude']) + str(item['longitude']))
+    return data
+
+
 class LatteHotelEs(Elastic, CommonElastic):
 
   """Store hotels from Latte."""

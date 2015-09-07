@@ -413,8 +413,9 @@ SEL_AMENITY_DIV = '//div[@id="AMENITIES_OVERLAY_HIDDEN"]'
 SEL_LOCATION_CONTENT = '//div[@id="HR_HACKATHON_CONTENT"]/div/div[contains(@class,"locationContent")]'
 
 CLEAN_STATE = re.compile(r'(.*)\s\(', re.DOTALL)
-
 FIND_HOTEL_LINK = re.compile(r'(?i)hotel', re.DOTALL)
+
+BUS_SELECT_COORDINATE_ID = re.compile(r'idref="n\d+', re.DOTALL)
 
 
 def get_body(sel):

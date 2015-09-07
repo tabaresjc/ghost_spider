@@ -95,3 +95,13 @@ class LocationAirportItem(Item):
   area = Field()
   country = Field()
   breadcrumbs = Field()
+
+
+class LocationBusItem(Item):
+
+  """required fields."""
+  name = Field()
+  prefecture = Field()
+  prefecture_ascii = Field()
+  latitude = Field()
+  longitude = Field()
